@@ -81,7 +81,8 @@ async function seed(): Promise<void> {
         location: 'Pebble Beach, California, USA',
         latitude: 36.5668,
         longitude: -121.9495,
-        description: 'One of the most famous golf courses in the world, known for its stunning ocean views.',
+        description:
+          'One of the most famous golf courses in the world, known for its stunning ocean views.',
         architect: 'Jack Neville and Douglas Grant',
         openingYear: 1919,
         courseType: 'LINKS',
@@ -126,8 +127,9 @@ async function seed(): Promise<void> {
     const dataSourcesCount = await prisma.dataSource.count();
     const configCount = await prisma.configuration.count();
 
-    systemLogger.info(`Seed summary: ${coursesCount} courses, ${dataSourcesCount} data sources, ${configCount} configurations`);
-
+    systemLogger.info(
+      `Seed summary: ${coursesCount} courses, ${dataSourcesCount} data sources, ${configCount} configurations`,
+    );
   } catch (error) {
     systemLogger.error('Database seed failed', error);
     throw error;

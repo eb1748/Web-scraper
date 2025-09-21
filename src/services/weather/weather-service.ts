@@ -1,4 +1,5 @@
-import axios, { AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
+import axios from 'axios';
 import * as moment from 'moment-timezone';
 import type {
   WeatherData,
@@ -63,7 +64,7 @@ export class WeatherService {
           headers: {
             'User-Agent': config.scraping.userAgent,
           },
-        }
+        },
       );
 
       this.incrementRequestCount();
@@ -87,7 +88,6 @@ export class WeatherService {
         remainingRequests: this.getRemainingRequests(),
         resetTime: new Date(this.lastReset + 60000), // Rate limit resets every minute
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError = this.createAPIError('getCurrentWeather', error);
@@ -141,7 +141,7 @@ export class WeatherService {
           headers: {
             'User-Agent': config.scraping.userAgent,
           },
-        }
+        },
       );
 
       this.incrementRequestCount();
@@ -165,7 +165,6 @@ export class WeatherService {
         remainingRequests: this.getRemainingRequests(),
         resetTime: new Date(this.lastReset + 60000),
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError = this.createAPIError('get5DayForecast', error);
@@ -235,7 +234,6 @@ export class WeatherService {
         requestId,
         processingTime,
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError = this.createAPIError('getGolfWeather', error);
@@ -300,7 +298,7 @@ export class WeatherService {
     // Group forecast entries by day and calculate daily summaries
     const dailyForecasts = new Map<string, any[]>();
 
-    rawData.list.forEach(entry => {
+    rawData.list.forEach((entry) => {
       const date = moment.unix(entry.dt).format('YYYY-MM-DD');
       if (!dailyForecasts.has(date)) {
         dailyForecasts.set(date, []);
@@ -311,31 +309,37 @@ export class WeatherService {
     const forecast: WeatherForecastDay[] = Array.from(dailyForecasts.entries())
       .slice(0, 5) // Limit to 5 days
       .map(([date, entries]) => {
-        const temperatures = entries.map(e => e.main.temp);
-        const precipitations = entries.map(e => e.pop);
-        const conditions = entries.map(e => e.weather[0].main);
-        const winds = entries.map(e => e.wind);
+        const temperatures = entries.map((e) => e.main.temp);
+        const precipitations = entries.map((e) => e.pop);
+        const conditions = entries.map((e) => e.weather[0].main);
+        const winds = entries.map((e) => e.wind);
 
         // Find most common condition
-        const conditionCounts = conditions.reduce((acc, condition) => {
-          acc[condition] = (acc[condition] || 0) + 1;
-          return acc;
-        }, {} as { [key: string]: number });
+        const conditionCounts = conditions.reduce(
+          (acc, condition) => {
+            acc[condition] = (acc[condition] || 0) + 1;
+            return acc;
+          },
+          {} as { [key: string]: number },
+        );
 
-        const mostCommonCondition = Object.entries(conditionCounts)
-          .sort(([,a], [,b]) => b - a)[0][0];
+        const mostCommonCondition = Object.entries(conditionCounts).sort(
+          ([, a], [, b]) => b - a,
+        )[0][0];
 
         return {
           date,
           tempHigh: Math.round(Math.max(...temperatures)),
           tempLow: Math.round(Math.min(...temperatures)),
-          precipitation: Math.round(Math.max(...precipitations.map(p => p * 100))), // Convert to percentage
+          precipitation: Math.round(Math.max(...precipitations.map((p) => p * 100))), // Convert to percentage
           precipitationProbability: Math.round(Math.max(...precipitations) * 100),
           conditions: mostCommonCondition,
           description: entries[Math.floor(entries.length / 2)].weather[0].description,
           windSpeed: Math.round(winds.reduce((sum, w) => sum + (w.speed || 0), 0) / winds.length),
           windDirection: winds[Math.floor(winds.length / 2)].deg || 0,
-          humidity: Math.round(entries.reduce((sum, e) => sum + e.main.humidity, 0) / entries.length),
+          humidity: Math.round(
+            entries.reduce((sum, e) => sum + e.main.humidity, 0) / entries.length,
+          ),
         };
       });
 
@@ -466,7 +470,7 @@ export class WeatherService {
     worstDays: string[];
     weekendOutlook: string;
   } {
-    const scoredDays = forecast.map(day => {
+    const scoredDays = forecast.map((day) => {
       let score = 100;
 
       // Temperature scoring
@@ -485,21 +489,22 @@ export class WeatherService {
     });
 
     const sortedDays = [...scoredDays].sort((a, b) => b.score - a.score);
-    const bestDays = sortedDays.slice(0, 2).map(d => d.date);
-    const worstDays = sortedDays.slice(-2).map(d => d.date);
+    const bestDays = sortedDays.slice(0, 2).map((d) => d.date);
+    const worstDays = sortedDays.slice(-2).map((d) => d.date);
 
     // Weekend outlook (Saturday and Sunday)
-    const weekend = forecast.filter(day => {
+    const weekend = forecast.filter((day) => {
       const dayOfWeek = moment(day.date).day();
       return dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
     });
 
     let weekendOutlook = 'No weekend data available';
     if (weekend.length > 0) {
-      const avgWeekendScore = weekend.reduce((sum, day) => {
-        const scored = scoredDays.find(s => s.date === day.date);
-        return sum + (scored?.score || 50);
-      }, 0) / weekend.length;
+      const avgWeekendScore =
+        weekend.reduce((sum, day) => {
+          const scored = scoredDays.find((s) => s.date === day.date);
+          return sum + (scored?.score || 50);
+        }, 0) / weekend.length;
 
       if (avgWeekendScore >= 80) {
         weekendOutlook = 'Excellent weekend conditions for golf';
@@ -536,7 +541,7 @@ export class WeatherService {
       const waitTime = 60000 - (now - this.lastReset);
       if (waitTime > 0) {
         apiLogger.warn(`OpenWeather rate limit reached, waiting ${waitTime}ms`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
         this.requestCount = 0;
         this.lastReset = Date.now();
       }
@@ -576,12 +581,12 @@ export class WeatherService {
    * Calculate dew point from temperature and humidity
    */
   private calculateDewPoint(tempF: number, humidity: number): number {
-    const tempC = (tempF - 32) * 5/9;
+    const tempC = ((tempF - 32) * 5) / 9;
     const a = 17.27;
     const b = 237.7;
-    const alpha = ((a * tempC) / (b + tempC)) + Math.log(humidity / 100);
+    const alpha = (a * tempC) / (b + tempC) + Math.log(humidity / 100);
     const dewPointC = (b * alpha) / (a - alpha);
-    return Math.round((dewPointC * 9/5) + 32); // Convert back to Fahrenheit
+    return Math.round((dewPointC * 9) / 5 + 32); // Convert back to Fahrenheit
   }
 
   /**

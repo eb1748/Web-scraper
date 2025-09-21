@@ -157,7 +157,9 @@ const configSchema = Joi.object({
       nominatimUrl: Joi.string().default('https://nominatim.openstreetmap.org'),
       timeoutMs: Joi.number().min(1000).default(25000),
       maxQueryRadius: Joi.number().min(1000).default(50000),
-      searchStrategies: Joi.array().items(Joi.string().valid('exact', 'fuzzy', 'location')).default(['exact', 'fuzzy', 'location']),
+      searchStrategies: Joi.array()
+        .items(Joi.string().valid('exact', 'fuzzy', 'location'))
+        .default(['exact', 'fuzzy', 'location']),
       fallbackToNominatim: Joi.boolean().default(true),
       rateLimiting: Joi.object({
         requestsPerMinute: Joi.number().min(1).default(10),
@@ -269,7 +271,7 @@ function buildConfig(): AppConfig {
     },
 
     logging: {
-      level: process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error' || 'info',
+      level: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
       dir: process.env.LOG_DIR,
       maxSize: process.env.LOG_MAX_SIZE,
       maxFiles: process.env.LOG_MAX_FILES,
@@ -304,12 +306,18 @@ function buildConfig(): AppConfig {
         circuitBreaker: {
           threshold: parseFloat(process.env.WEATHER_CIRCUIT_BREAKER_THRESHOLD || '0.5'),
           resetTimeoutMs: parseInt(process.env.WEATHER_CIRCUIT_BREAKER_RESET_MS || '60000', 10),
-          monitoringPeriodMs: parseInt(process.env.WEATHER_CIRCUIT_BREAKER_MONITOR_MS || '300000', 10),
+          monitoringPeriodMs: parseInt(
+            process.env.WEATHER_CIRCUIT_BREAKER_MONITOR_MS || '300000',
+            10,
+          ),
           fallbackEnabled: process.env.WEATHER_CIRCUIT_BREAKER_FALLBACK !== 'false',
         },
         cache: {
           currentWeatherTtlMinutes: parseInt(process.env.WEATHER_CACHE_CURRENT_TTL_MIN || '30', 10),
-          forecastWeatherTtlHours: parseInt(process.env.WEATHER_CACHE_FORECAST_TTL_HOURS || '4', 10),
+          forecastWeatherTtlHours: parseInt(
+            process.env.WEATHER_CACHE_FORECAST_TTL_HOURS || '4',
+            10,
+          ),
           golfWeatherTtlMinutes: parseInt(process.env.WEATHER_CACHE_GOLF_TTL_MIN || '30', 10),
           wikipediaArticleTtlHours: parseInt(process.env.CACHE_WIKIPEDIA_TTL_HOURS || '24', 10),
           osmDataTtlHours: parseInt(process.env.CACHE_OSM_TTL_HOURS || '24', 10),
@@ -336,12 +344,18 @@ function buildConfig(): AppConfig {
         circuitBreaker: {
           threshold: parseFloat(process.env.WIKIPEDIA_CIRCUIT_BREAKER_THRESHOLD || '0.6'),
           resetTimeoutMs: parseInt(process.env.WIKIPEDIA_CIRCUIT_BREAKER_RESET_MS || '30000', 10),
-          monitoringPeriodMs: parseInt(process.env.WIKIPEDIA_CIRCUIT_BREAKER_MONITOR_MS || '300000', 10),
+          monitoringPeriodMs: parseInt(
+            process.env.WIKIPEDIA_CIRCUIT_BREAKER_MONITOR_MS || '300000',
+            10,
+          ),
           fallbackEnabled: process.env.WIKIPEDIA_CIRCUIT_BREAKER_FALLBACK !== 'false',
         },
         cache: {
           currentWeatherTtlMinutes: parseInt(process.env.CACHE_CURRENT_WEATHER_TTL_MIN || '30', 10),
-          forecastWeatherTtlHours: parseInt(process.env.CACHE_FORECAST_WEATHER_TTL_HOURS || '4', 10),
+          forecastWeatherTtlHours: parseInt(
+            process.env.CACHE_FORECAST_WEATHER_TTL_HOURS || '4',
+            10,
+          ),
           golfWeatherTtlMinutes: parseInt(process.env.CACHE_GOLF_WEATHER_TTL_MIN || '30', 10),
           wikipediaArticleTtlHours: parseInt(process.env.WIKIPEDIA_CACHE_TTL_HOURS || '24', 10),
           osmDataTtlHours: parseInt(process.env.CACHE_OSM_TTL_HOURS || '24', 10),
@@ -355,7 +369,9 @@ function buildConfig(): AppConfig {
         nominatimUrl: process.env.OSM_NOMINATIM_URL || 'https://nominatim.openstreetmap.org',
         timeoutMs: parseInt(process.env.OSM_TIMEOUT_MS || '25000', 10),
         maxQueryRadius: parseInt(process.env.OSM_MAX_QUERY_RADIUS || '50000', 10),
-        searchStrategies: (process.env.OSM_SEARCH_STRATEGIES || 'exact,fuzzy,location').split(',') as ('exact' | 'fuzzy' | 'location')[],
+        searchStrategies: (process.env.OSM_SEARCH_STRATEGIES || 'exact,fuzzy,location').split(
+          ',',
+        ) as ('exact' | 'fuzzy' | 'location')[],
         fallbackToNominatim: process.env.OSM_FALLBACK_TO_NOMINATIM !== 'false',
         rateLimiting: {
           requestsPerMinute: parseInt(process.env.OSM_RATE_LIMIT_PER_MINUTE || '10', 10),
@@ -373,7 +389,10 @@ function buildConfig(): AppConfig {
         },
         cache: {
           currentWeatherTtlMinutes: parseInt(process.env.CACHE_CURRENT_WEATHER_TTL_MIN || '30', 10),
-          forecastWeatherTtlHours: parseInt(process.env.CACHE_FORECAST_WEATHER_TTL_HOURS || '4', 10),
+          forecastWeatherTtlHours: parseInt(
+            process.env.CACHE_FORECAST_WEATHER_TTL_HOURS || '4',
+            10,
+          ),
           golfWeatherTtlMinutes: parseInt(process.env.CACHE_GOLF_WEATHER_TTL_MIN || '30', 10),
           wikipediaArticleTtlHours: parseInt(process.env.CACHE_WIKIPEDIA_TTL_HOURS || '24', 10),
           osmDataTtlHours: parseInt(process.env.OSM_CACHE_TTL_HOURS || '24', 10),

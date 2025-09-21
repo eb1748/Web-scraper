@@ -30,11 +30,11 @@ export class StaticContentScraper {
       timeout: this.timeout,
       headers: {
         'User-Agent': this.userAgent,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate',
-        'DNT': '1',
-        'Connection': 'keep-alive',
+        DNT: '1',
+        Connection: 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
       },
       maxRedirects: 5,
@@ -53,7 +53,7 @@ export class StaticContentScraper {
       (error) => {
         scrapingLogger.error('Request interceptor error', error);
         return Promise.reject(error);
-      }
+      },
     );
 
     // Add response interceptor for logging
@@ -73,14 +73,17 @@ export class StaticContentScraper {
           message: error.message,
         });
         return Promise.reject(error);
-      }
+      },
     );
   }
 
   /**
    * Main scraping method for static content
    */
-  async scrapeBasicInfo(target: ScrapingTarget, options?: Partial<ScrapingOptions>): Promise<ProcessingResult> {
+  async scrapeBasicInfo(
+    target: ScrapingTarget,
+    options?: Partial<ScrapingOptions>,
+  ): Promise<ProcessingResult> {
     const startTime = Date.now();
     const requestId = `static-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -139,7 +142,6 @@ export class StaticContentScraper {
           resourcesLoaded: 1,
         },
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const scrapingError = this.handleError(error, target.url);
@@ -172,7 +174,10 @@ export class StaticContentScraper {
   /**
    * Fetch HTML content with proper error handling
    */
-  private async fetchContent(url: string, options?: Partial<ScrapingOptions>): Promise<AxiosResponse> {
+  private async fetchContent(
+    url: string,
+    options?: Partial<ScrapingOptions>,
+  ): Promise<AxiosResponse> {
     const requestOptions = {
       url,
       method: 'GET' as const,
@@ -195,7 +200,7 @@ export class StaticContentScraper {
           `HTTP ${response.status}: ${response.statusText}`,
           url,
           'GET',
-          response.status
+          response.status,
         );
       }
 
@@ -210,7 +215,7 @@ export class StaticContentScraper {
             `HTTP ${error.response.status}: ${error.response.statusText}`,
             url,
             'GET',
-            error.response.status
+            error.response.status,
           );
         }
         if (error.request) {
@@ -227,7 +232,7 @@ export class StaticContentScraper {
   private async extractCourseData(
     $: cheerio.CheerioAPI,
     htmlRoot: any,
-    target: ScrapingTarget
+    target: ScrapingTarget,
   ): Promise<Partial<CourseBasicInfo>> {
     const data: Partial<CourseBasicInfo> = {
       name: target.name, // Fallback to target name
@@ -235,14 +240,15 @@ export class StaticContentScraper {
 
     try {
       // Extract course name
-      data.name = this.extractField($, [
-        'h1',
-        '.course-name',
-        '.page-title',
-        'title',
-        '[data-testid="course-name"]',
-        ...(target.selectors?.courseName || []),
-      ]) || target.name;
+      data.name =
+        this.extractField($, [
+          'h1',
+          '.course-name',
+          '.page-title',
+          'title',
+          '[data-testid="course-name"]',
+          ...(target.selectors?.courseName || []),
+        ]) || target.name;
 
       // Extract description
       data.description = this.extractField($, [
@@ -381,7 +387,9 @@ export class StaticContentScraper {
 
       // Clean email
       if (contact.email) {
-        const emailMatch = contact.email.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+        const emailMatch = contact.email.match(
+          /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+        );
         if (emailMatch) {
           contact.email = emailMatch[0];
         }
@@ -397,21 +405,24 @@ export class StaticContentScraper {
       ]);
 
       // Extract website (canonical or alternate links)
-      contact.website = this.extractField($, [
-        'link[rel="canonical"]',
-        'meta[property="og:url"]',
-        '.website',
-        'a[href*="golf"]',
-      ], 'href');
+      contact.website = this.extractField(
+        $,
+        ['link[rel="canonical"]', 'meta[property="og:url"]', '.website', 'a[href*="golf"]'],
+        'href',
+      );
 
       // Extract booking URL
-      contact.bookingUrl = this.extractField($, [
-        'a[href*="booking"]',
-        'a[href*="tee-time"]',
-        'a[href*="reserve"]',
-        'a:contains("book")',
-        'a:contains("tee time")',
-      ], 'href');
+      contact.bookingUrl = this.extractField(
+        $,
+        [
+          'a[href*="booking"]',
+          'a[href*="tee-time"]',
+          'a[href*="reserve"]',
+          'a:contains("book")',
+          'a:contains("tee time")',
+        ],
+        'href',
+      );
 
       return contact;
     } catch (error) {
@@ -423,7 +434,11 @@ export class StaticContentScraper {
   /**
    * Extract images from the page
    */
-  private async extractImages($: cheerio.CheerioAPI, htmlRoot: any, baseUrl: string): Promise<CourseImages> {
+  private async extractImages(
+    $: cheerio.CheerioAPI,
+    htmlRoot: any,
+    baseUrl: string,
+  ): Promise<CourseImages> {
     const images: CourseImages = {
       hero: [],
       gallery: [],
@@ -442,7 +457,7 @@ export class StaticContentScraper {
         'img[alt*="golf"]',
       ];
 
-      heroSelectors.forEach(selector => {
+      heroSelectors.forEach((selector) => {
         $(selector).each((_, element) => {
           const src = $(element).attr('src') || $(element).attr('data-src');
           if (src) {
@@ -463,7 +478,7 @@ export class StaticContentScraper {
         '[class*="gallery"] img',
       ];
 
-      gallerySelectors.forEach(selector => {
+      gallerySelectors.forEach((selector) => {
         $(selector).each((_, element) => {
           const src = $(element).attr('src') || $(element).attr('data-src');
           if (src) {
@@ -484,7 +499,7 @@ export class StaticContentScraper {
         '.layout img',
       ];
 
-      mapSelectors.forEach(selector => {
+      mapSelectors.forEach((selector) => {
         $(selector).each((_, element) => {
           const src = $(element).attr('src') || $(element).attr('data-src');
           if (src) {
@@ -514,7 +529,7 @@ export class StaticContentScraper {
   private extractField(
     $: cheerio.CheerioAPI,
     selectors: string[],
-    attribute?: string
+    attribute?: string,
   ): string | undefined {
     for (const selector of selectors) {
       const element = $(selector).first();
@@ -549,10 +564,7 @@ export class StaticContentScraper {
 
     // Clean description
     if (data.description) {
-      data.description = data.description
-        .replace(/\s+/g, ' ')
-        .replace(/\n+/g, ' ')
-        .trim();
+      data.description = data.description.replace(/\s+/g, ' ').replace(/\n+/g, ' ').trim();
 
       // Limit description length
       if (data.description.length > 500) {
@@ -583,18 +595,23 @@ export class StaticContentScraper {
   private calculateConfidence(
     courseData: Partial<CourseBasicInfo>,
     contactInfo: ContactInfo,
-    images: CourseImages
+    images: CourseImages,
   ): number {
     let score = 0;
     let maxScore = 0;
 
     // Course data scoring
     const courseFields = [
-      'name', 'description', 'architect', 'openingYear',
-      'totalYardage', 'parScore', 'numberOfHoles'
+      'name',
+      'description',
+      'architect',
+      'openingYear',
+      'totalYardage',
+      'parScore',
+      'numberOfHoles',
     ];
 
-    courseFields.forEach(field => {
+    courseFields.forEach((field) => {
       maxScore += 10;
       if (courseData[field as keyof CourseBasicInfo]) {
         score += 10;
@@ -603,7 +620,7 @@ export class StaticContentScraper {
 
     // Contact info scoring
     const contactFields = ['phone', 'email', 'address', 'website'];
-    contactFields.forEach(field => {
+    contactFields.forEach((field) => {
       maxScore += 5;
       if (contactInfo[field as keyof ContactInfo]) {
         score += 5;

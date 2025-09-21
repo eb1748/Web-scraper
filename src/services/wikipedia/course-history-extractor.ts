@@ -5,7 +5,7 @@ import type {
   APIError,
   ValidationResult,
 } from '../../types/api.types';
-import { WikipediaService } from './wikipedia-service';
+import type { WikipediaService } from './wikipedia-service';
 import { apiLogger } from '../../utils/logger';
 
 interface ArchitectMatch {
@@ -31,30 +31,84 @@ export class CourseHistoryExtractor {
 
   // Known golf course architects for validation
   private readonly KNOWN_ARCHITECTS = [
-    'Donald Ross', 'Alister MacKenzie', 'A.W. Tillinghast', 'Charles Blair Macdonald',
-    'Seth Raynor', 'William Flynn', 'George Thomas', 'Tom Fazio', 'Pete Dye',
-    'Jack Nicklaus', 'Arnold Palmer', 'Robert Trent Jones', 'Robert Trent Jones Jr.',
-    'Rees Jones', 'Tom Doak', 'Bill Coore', 'Ben Crenshaw', 'Gil Hanse',
-    'C.B. Macdonald', 'Harry Colt', 'Tom Simpson', 'James Braid', 'Herbert Fowler',
-    'Max Behr', 'George Crump', 'Dick Wilson', 'Joe Lee', 'Arthur Hills',
-    'Michael Hurdzan', 'Dana Fry', 'Jim Engh', 'Keith Foster', 'Ron Whitten',
-    'Coore & Crenshaw', 'Doak & Renaissance', 'Jones & Jones', 'Fazio Design',
+    'Donald Ross',
+    'Alister MacKenzie',
+    'A.W. Tillinghast',
+    'Charles Blair Macdonald',
+    'Seth Raynor',
+    'William Flynn',
+    'George Thomas',
+    'Tom Fazio',
+    'Pete Dye',
+    'Jack Nicklaus',
+    'Arnold Palmer',
+    'Robert Trent Jones',
+    'Robert Trent Jones Jr.',
+    'Rees Jones',
+    'Tom Doak',
+    'Bill Coore',
+    'Ben Crenshaw',
+    'Gil Hanse',
+    'C.B. Macdonald',
+    'Harry Colt',
+    'Tom Simpson',
+    'James Braid',
+    'Herbert Fowler',
+    'Max Behr',
+    'George Crump',
+    'Dick Wilson',
+    'Joe Lee',
+    'Arthur Hills',
+    'Michael Hurdzan',
+    'Dana Fry',
+    'Jim Engh',
+    'Keith Foster',
+    'Ron Whitten',
+    'Coore & Crenshaw',
+    'Doak & Renaissance',
+    'Jones & Jones',
+    'Fazio Design',
   ];
 
   // Major golf championships
   private readonly MAJOR_CHAMPIONSHIPS = [
-    'Masters Tournament', 'U.S. Open', 'Open Championship', 'PGA Championship',
-    'The Players Championship', 'Ryder Cup', 'Presidents Cup', 'Solheim Cup',
-    'Walker Cup', 'Curtis Cup', 'U.S. Amateur', 'British Amateur',
+    'Masters Tournament',
+    'U.S. Open',
+    'Open Championship',
+    'PGA Championship',
+    'The Players Championship',
+    'Ryder Cup',
+    'Presidents Cup',
+    'Solheim Cup',
+    'Walker Cup',
+    'Curtis Cup',
+    'U.S. Amateur',
+    'British Amateur',
   ];
 
   // Golf architecture terms and concepts
   private readonly DESIGN_TERMS = [
-    'strategic design', 'penal design', 'heroic design', 'links style',
-    'parkland style', 'desert style', 'mountain course', 'seaside links',
-    'target golf', 'risk-reward', 'championship tees', 'multiple tees',
-    'elevation changes', 'water hazards', 'bunker placement', 'green complexes',
-    'doglegs', 'par 3s', 'par 4s', 'par 5s', 'signature hole',
+    'strategic design',
+    'penal design',
+    'heroic design',
+    'links style',
+    'parkland style',
+    'desert style',
+    'mountain course',
+    'seaside links',
+    'target golf',
+    'risk-reward',
+    'championship tees',
+    'multiple tees',
+    'elevation changes',
+    'water hazards',
+    'bunker placement',
+    'green complexes',
+    'doglegs',
+    'par 3s',
+    'par 4s',
+    'par 5s',
+    'signature hole',
   ];
 
   constructor(wikipediaService: WikipediaService) {
@@ -67,7 +121,7 @@ export class CourseHistoryExtractor {
    */
   async extractHistoricalData(
     courseName: string,
-    location: string
+    location: string,
   ): Promise<APIResponse<CourseHistoricalData>> {
     const requestId = `history-extract-${Date.now()}`;
     const startTime = Date.now();
@@ -140,7 +194,6 @@ export class CourseHistoryExtractor {
         requestId,
         processingTime,
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError: APIError = {
@@ -245,7 +298,7 @@ export class CourseHistoryExtractor {
       /([^.]+) in collaboration with ([^.]+)/i,
     ];
 
-    multiArchitectPatterns.forEach(pattern => {
+    multiArchitectPatterns.forEach((pattern) => {
       const match = textContent.match(pattern);
       if (match) {
         const arch1 = this.validateArchitectName(match[1]);
@@ -268,10 +321,10 @@ export class CourseHistoryExtractor {
       /modified by ([^.]+)/i,
     ];
 
-    renovationPatterns.forEach(pattern => {
+    renovationPatterns.forEach((pattern) => {
       const matches = textContent.match(new RegExp(pattern.source, 'gi'));
       if (matches) {
-        matches.forEach(match => {
+        matches.forEach((match) => {
           const architectMatch = match.match(pattern);
           if (architectMatch && architectMatch[1]) {
             const validated = this.validateArchitectName(architectMatch[1]);
@@ -293,12 +346,16 @@ export class CourseHistoryExtractor {
   /**
    * Validate architect name against known architects
    */
-  private validateArchitectName(name: string): { isValid: boolean; name: string; confidence: number } {
+  private validateArchitectName(name: string): {
+    isValid: boolean;
+    name: string;
+    confidence: number;
+  } {
     const cleanName = name.trim().replace(/\s+/g, ' ');
 
     // Exact match
-    const exactMatch = this.KNOWN_ARCHITECTS.find(arch =>
-      arch.toLowerCase() === cleanName.toLowerCase()
+    const exactMatch = this.KNOWN_ARCHITECTS.find(
+      (arch) => arch.toLowerCase() === cleanName.toLowerCase(),
     );
 
     if (exactMatch) {
@@ -306,12 +363,14 @@ export class CourseHistoryExtractor {
     }
 
     // Partial match
-    const partialMatch = this.KNOWN_ARCHITECTS.find(arch => {
+    const partialMatch = this.KNOWN_ARCHITECTS.find((arch) => {
       const archWords = arch.toLowerCase().split(' ');
       const nameWords = cleanName.toLowerCase().split(' ');
 
-      return archWords.some(word => nameWords.includes(word)) ||
-             nameWords.some(word => archWords.includes(word));
+      return (
+        archWords.some((word) => nameWords.includes(word)) ||
+        nameWords.some((word) => archWords.includes(word))
+      );
     });
 
     if (partialMatch) {
@@ -320,7 +379,7 @@ export class CourseHistoryExtractor {
 
     // Check if it looks like a person's name (has at least first and last name)
     const words = cleanName.split(' ');
-    if (words.length >= 2 && words.every(word => /^[A-Z][a-z]+/.test(word))) {
+    if (words.length >= 2 && words.every((word) => /^[A-Z][a-z]+/.test(word))) {
       return { isValid: true, name: cleanName, confidence: 0.5 };
     }
 
@@ -368,10 +427,10 @@ export class CourseHistoryExtractor {
       /(\d{4}) redesign/gi,
     ];
 
-    renovationPatterns.forEach(pattern => {
+    renovationPatterns.forEach((pattern) => {
       const matches = textContent.match(pattern);
       if (matches) {
-        matches.forEach(match => {
+        matches.forEach((match) => {
           const yearMatch = match.match(/(\d{4})/);
           if (yearMatch) {
             const year = parseInt(yearMatch[1], 10);
@@ -423,7 +482,7 @@ export class CourseHistoryExtractor {
     }> = [];
 
     // Process major championships from Wikipedia data
-    data.majorChampionships.forEach(championship => {
+    data.majorChampionships.forEach((championship) => {
       const normalized = this.normalizeTournamentName(championship);
 
       if (normalized) {
@@ -437,9 +496,9 @@ export class CourseHistoryExtractor {
     });
 
     // Look for additional tournament information in notable events
-    data.notableEvents.forEach(event => {
+    data.notableEvents.forEach((event) => {
       const normalized = this.normalizeTournamentName(event);
-      if (normalized && !championships.find(c => c.tournament === normalized)) {
+      if (normalized && !championships.find((c) => c.tournament === normalized)) {
         const years = this.extractYearsFromText(event);
         championships.push({
           tournament: normalized,
@@ -466,8 +525,13 @@ export class CourseHistoryExtractor {
 
     // Look for other notable tournaments
     const otherTournaments = [
-      'PGA Tour', 'LPGA Tour', 'Champions Tour', 'Web.com Tour',
-      'FedEx Cup', 'Byron Nelson', 'Memorial Tournament',
+      'PGA Tour',
+      'LPGA Tour',
+      'Champions Tour',
+      'Web.com Tour',
+      'FedEx Cup',
+      'Byron Nelson',
+      'Memorial Tournament',
     ];
 
     for (const tournament of otherTournaments) {
@@ -487,7 +551,7 @@ export class CourseHistoryExtractor {
     const yearMatches = text.match(/\b(19|20)\d{2}\b/g);
 
     if (yearMatches) {
-      yearMatches.forEach(yearStr => {
+      yearMatches.forEach((yearStr) => {
         const year = parseInt(yearStr, 10);
         if (year >= 1900 && year <= new Date().getFullYear()) {
           years.push(year);
@@ -506,7 +570,7 @@ export class CourseHistoryExtractor {
     const philosophyTerms: string[] = [];
 
     // Look for design-related terms
-    this.DESIGN_TERMS.forEach(term => {
+    this.DESIGN_TERMS.forEach((term) => {
       if (textContent.includes(term.toLowerCase())) {
         philosophyTerms.push(term);
       }
@@ -518,10 +582,14 @@ export class CourseHistoryExtractor {
     }
 
     // Fallback to extracting design-related sentences
-    const designSentences = data.summary.split('.').filter(sentence => {
+    const designSentences = data.summary.split('.').filter((sentence) => {
       const lower = sentence.toLowerCase();
-      return lower.includes('design') || lower.includes('layout') ||
-             lower.includes('challenge') || lower.includes('feature');
+      return (
+        lower.includes('design') ||
+        lower.includes('layout') ||
+        lower.includes('challenge') ||
+        lower.includes('feature')
+      );
     });
 
     return designSentences.slice(0, 2).join('. ').trim();
@@ -542,7 +610,7 @@ export class CourseHistoryExtractor {
       /challenging hole/g,
     ];
 
-    holePatterns.forEach(pattern => {
+    holePatterns.forEach((pattern) => {
       const matches = textContent.match(pattern);
       if (matches) {
         features.push(...matches.slice(0, 3)); // Limit to 3 per pattern
@@ -559,7 +627,7 @@ export class CourseHistoryExtractor {
       /waste area/g,
     ];
 
-    featurePatterns.forEach(pattern => {
+    featurePatterns.forEach((pattern) => {
       const matches = textContent.match(pattern);
       if (matches) {
         features.push(...matches.slice(0, 2));
@@ -594,10 +662,10 @@ export class CourseHistoryExtractor {
       /tournament record[:\s]+(\d+)[^.]*by ([^.]+)/gi,
     ];
 
-    recordPatterns.forEach(pattern => {
+    recordPatterns.forEach((pattern) => {
       const matches = textContent.match(pattern);
       if (matches) {
-        matches.forEach(match => {
+        matches.forEach((match) => {
           const scoreMatch = match.match(/(\d+)/);
           const playerMatch = match.match(/by ([^.]+)/i);
 
@@ -636,7 +704,7 @@ export class CourseHistoryExtractor {
     }
 
     // Validate renovation years
-    data.renovationYears.forEach(year => {
+    data.renovationYears.forEach((year) => {
       if (year < data.openingYear) {
         errors.push(`Renovation year ${year} is before opening year ${data.openingYear}`);
       }

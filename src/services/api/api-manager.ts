@@ -170,7 +170,7 @@ export class APIManager {
         if (this.requests >= this.maxRequests) {
           const waitTime = this.windowMs - (now - this.lastReset.getTime());
           if (waitTime > 0) {
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
             this.requests = 0;
             this.lastReset = new Date();
           }
@@ -211,7 +211,7 @@ export class APIManager {
   async makeAPICall<T>(
     serviceName: string,
     requestFn: () => Promise<T>,
-    options: APICallOptions = {}
+    options: APICallOptions = {},
   ): Promise<APIResponse<T>> {
     const requestId = `api-${serviceName}-${Date.now()}`;
     const startTime = Date.now();
@@ -274,7 +274,6 @@ export class APIManager {
         remainingRequests: serviceInstance.rateLimiter.getRemainingRequests(),
         resetTime: serviceInstance.rateLimiter.getResetTime(),
       };
-
     } catch (error) {
       this.globalStats.failedRequests++;
       const processingTime = Date.now() - startTime;
@@ -310,62 +309,83 @@ export class APIManager {
   /**
    * Get current weather for a course
    */
-  async getCurrentWeather(courseId: string, lat: number, lon: number): Promise<APIResponse<WeatherData>> {
+  async getCurrentWeather(
+    courseId: string,
+    lat: number,
+    lon: number,
+  ): Promise<APIResponse<WeatherData>> {
     return await this.weatherCache.getCurrentWeather(courseId, lat, lon);
   }
 
   /**
    * Get golf weather analysis for a course
    */
-  async getGolfWeather(courseId: string, lat: number, lon: number): Promise<APIResponse<GolfWeatherData>> {
+  async getGolfWeather(
+    courseId: string,
+    lat: number,
+    lon: number,
+  ): Promise<APIResponse<GolfWeatherData>> {
     return await this.weatherCache.getGolfWeather(courseId, lat, lon);
   }
 
   /**
    * Get course historical data from Wikipedia
    */
-  async getCourseHistory(courseName: string, location: string): Promise<APIResponse<CourseHistoricalData>> {
+  async getCourseHistory(
+    courseName: string,
+    location: string,
+  ): Promise<APIResponse<CourseHistoricalData>> {
     return await this.makeAPICall(
       'wikipedia',
       () => this.historyExtractor.extractHistoricalData(courseName, location),
-      { retryAttempts: 2 }
+      { retryAttempts: 2 },
     );
   }
 
   /**
    * Get course location data from OSM
    */
-  async getCourseLocation(courseName: string, city: string, state: string): Promise<APIResponse<OSMCourseData | null>> {
+  async getCourseLocation(
+    courseName: string,
+    city: string,
+    state: string,
+  ): Promise<APIResponse<OSMCourseData | null>> {
     return await this.makeAPICall(
       'osm',
       () => this.osmService.findCourseLocation(courseName, city, state),
-      { retryAttempts: 1, retryDelay: 3000 }
+      { retryAttempts: 1, retryDelay: 3000 },
     );
   }
 
   /**
    * Get nearby amenities for a location
    */
-  async getNearbyAmenities(lat: number, lon: number, radiusKm: number = 10): Promise<APIResponse<POI[]>> {
+  async getNearbyAmenities(
+    lat: number,
+    lon: number,
+    radiusKm: number = 10,
+  ): Promise<APIResponse<POI[]>> {
     return await this.makeAPICall(
       'osm',
       () => this.osmService.getNearbyAmenities(lat, lon, radiusKm),
-      { retryAttempts: 1 }
+      { retryAttempts: 1 },
     );
   }
 
   /**
    * Batch enrich multiple courses
    */
-  async batchEnrichCourses(courses: Array<{
-    id: string;
-    name: string;
-    location: string;
-    city: string;
-    state: string;
-    lat?: number;
-    lon?: number;
-  }>): Promise<{
+  async batchEnrichCourses(
+    courses: Array<{
+      id: string;
+      name: string;
+      location: string;
+      city: string;
+      state: string;
+      lat?: number;
+      lon?: number;
+    }>,
+  ): Promise<{
     successful: number;
     failed: number;
     errors: string[];
@@ -388,27 +408,21 @@ export class APIManager {
 
         // Get location if not provided
         if (!course.lat || !course.lon) {
-          enrichmentPromises.push(
-            this.getCourseLocation(course.name, course.city, course.state)
-          );
+          enrichmentPromises.push(this.getCourseLocation(course.name, course.city, course.state));
         }
 
         // Get historical data
-        enrichmentPromises.push(
-          this.getCourseHistory(course.name, course.location)
-        );
+        enrichmentPromises.push(this.getCourseHistory(course.name, course.location));
 
         // Get weather data if coordinates available
         if (course.lat && course.lon) {
-          enrichmentPromises.push(
-            this.getGolfWeather(course.id, course.lat, course.lon)
-          );
+          enrichmentPromises.push(this.getGolfWeather(course.id, course.lat, course.lon));
         }
 
         const enrichmentResults = await Promise.allSettled(enrichmentPromises);
 
         const successfulResults = enrichmentResults.filter(
-          result => result.status === 'fulfilled'
+          (result) => result.status === 'fulfilled',
         ).length;
 
         if (successfulResults > 0) {
@@ -419,8 +433,7 @@ export class APIManager {
         }
 
         // Add delay between courses to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       } catch (error) {
         results.failed++;
         results.errors.push(`${course.name}: ${error.message}`);
@@ -449,9 +462,8 @@ export class APIManager {
     const health = serviceInstance.healthStatus;
 
     // Update response time (rolling average)
-    health.responseTime = health.responseTime === 0
-      ? responseTime
-      : (health.responseTime * 0.7) + (responseTime * 0.3);
+    health.responseTime =
+      health.responseTime === 0 ? responseTime : health.responseTime * 0.7 + responseTime * 0.3;
 
     // Update error rate (simplified)
     if (success) {
@@ -539,11 +551,11 @@ export class APIManager {
    * Get overall health status
    */
   getHealthStatus(): HealthCheckResult {
-    const services = Array.from(this.services.values()).map(instance => instance.healthStatus);
+    const services = Array.from(this.services.values()).map((instance) => instance.healthStatus);
 
-    const healthyCount = services.filter(s => s.status === 'healthy').length;
-    const degradedCount = services.filter(s => s.status === 'degraded').length;
-    const unhealthyCount = services.filter(s => s.status === 'unhealthy').length;
+    const healthyCount = services.filter((s) => s.status === 'healthy').length;
+    const degradedCount = services.filter((s) => s.status === 'degraded').length;
+    const unhealthyCount = services.filter((s) => s.status === 'unhealthy').length;
 
     let overall: 'healthy' | 'degraded' | 'unhealthy';
 

@@ -1,10 +1,7 @@
 import axios from 'axios';
 import robotsParser from 'robots-parser';
 import * as URL from 'url-parse';
-import type {
-  RobotsDirective,
-  RobotsCheckResult,
-} from '../../types/scraping.types';
+import type { RobotsDirective, RobotsCheckResult } from '../../types/scraping.types';
 import { scrapingLogger } from '../../utils/logger';
 import { NetworkError } from '../../utils/errors';
 import config from '../../config/config';
@@ -23,15 +20,21 @@ export class RobotsChecker {
 
   constructor() {
     // Clean up cache periodically
-    setInterval(() => {
-      this.cleanupCache();
-    }, 60 * 60 * 1000); // Every hour
+    setInterval(
+      () => {
+        this.cleanupCache();
+      },
+      60 * 60 * 1000,
+    ); // Every hour
   }
 
   /**
    * Check if scraping is allowed for a URL
    */
-  async canScrape(url: string, userAgent: string = config.scraping.userAgent): Promise<RobotsCheckResult> {
+  async canScrape(
+    url: string,
+    userAgent: string = config.scraping.userAgent,
+  ): Promise<RobotsCheckResult> {
     try {
       const parsedUrl = new URL(url);
       const domain = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
@@ -81,7 +84,6 @@ export class RobotsChecker {
       });
 
       return result;
-
     } catch (error) {
       scrapingLogger.error('Error checking robots.txt', error, { url, userAgent });
 
@@ -139,7 +141,6 @@ export class RobotsChecker {
       });
 
       return directive;
-
     } catch (error) {
       scrapingLogger.warn(`Failed to fetch robots.txt for ${domain}`, { error: error.message });
 
@@ -201,8 +202,8 @@ export class RobotsChecker {
       // Extract sitemap URLs
       const sitemapMatches = content.match(/^Sitemap:\s*(.+)$/gim);
       if (sitemapMatches) {
-        directive.sitemap = sitemapMatches.map(match =>
-          match.replace(/^Sitemap:\s*/i, '').trim()
+        directive.sitemap = sitemapMatches.map((match) =>
+          match.replace(/^Sitemap:\s*/i, '').trim(),
         );
       }
 
@@ -213,7 +214,6 @@ export class RobotsChecker {
       }
 
       return directive;
-
     } catch (error) {
       scrapingLogger.error('Error parsing robots.txt', error, { url });
       return null;
@@ -236,7 +236,10 @@ export class RobotsChecker {
           // Check if there's a more specific allow rule
           if (directive.allowed) {
             for (const allowedPath of directive.allowed) {
-              if (this.matchesPattern(path, allowedPath) && allowedPath.length > disallowedPath.length) {
+              if (
+                this.matchesPattern(path, allowedPath) &&
+                allowedPath.length > disallowedPath.length
+              ) {
                 return true; // More specific allow rule takes precedence
               }
             }
@@ -246,7 +249,6 @@ export class RobotsChecker {
       }
 
       return true;
-
     } catch (error) {
       scrapingLogger.error('Error checking path allowance', error, { path, userAgent });
       return true; // Default to allowed on error
@@ -333,7 +335,6 @@ export class RobotsChecker {
         exists: false,
         lastChecked: new Date(),
       };
-
     } catch (error) {
       scrapingLogger.error(`Error getting robots.txt info for ${domain}`, error);
 
@@ -369,13 +370,19 @@ export class RobotsChecker {
     const domains = Array.from(this.robotsCache.keys());
     const entries = Array.from(this.robotsCache.values());
 
-    const timestamps = entries.map(entry => entry.timestamp);
+    const timestamps = entries.map((entry) => entry.timestamp);
 
     return {
       size: this.robotsCache.size,
       domains,
-      oldestEntry: timestamps.length > 0 ? new Date(Math.min(...timestamps.map(t => t.getTime()))) : undefined,
-      newestEntry: timestamps.length > 0 ? new Date(Math.max(...timestamps.map(t => t.getTime()))) : undefined,
+      oldestEntry:
+        timestamps.length > 0
+          ? new Date(Math.min(...timestamps.map((t) => t.getTime())))
+          : undefined,
+      newestEntry:
+        timestamps.length > 0
+          ? new Date(Math.max(...timestamps.map((t) => t.getTime())))
+          : undefined,
     };
   }
 
@@ -456,7 +463,6 @@ export class RobotsChecker {
         errors,
         warnings,
       };
-
     } catch (error) {
       return {
         valid: false,

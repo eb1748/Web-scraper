@@ -28,6 +28,29 @@ enum LogCategory {
   VALIDATION
   PROCESSING
   API
+  MEDIA
+}
+
+enum ImageCategory {
+  HERO
+  GALLERY
+  MAP
+  AMENITY
+  THUMBNAIL
+}
+
+enum ImageFormat {
+  JPEG
+  PNG
+  WEBP
+  AVIF
+  GIF
+}
+
+enum ImageQuality {
+  HIGH
+  MEDIUM
+  LOW
 }
 
 model Course {
@@ -95,6 +118,8 @@ model Course {
   userPhotos           UserPhoto[]
   qualityReports       QualityReport[]
   scrapingLogs         ScrapingLog[]
+  mediaItems           MediaItem[]
+  imageVariants        ImageVariant[]
 
   // Indexes
   @@index([latitude, longitude], name: "idx_course_location")
@@ -177,6 +202,186 @@ model ScrapingLog {
   @@index([timestamp])
   @@index([level])
   @@index([category])
+}
+
+model MediaItem {
+  id              String        @id @default(cuid())
+  courseId        String
+  course          Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // Basic image information
+  category        ImageCategory
+  originalUrl     String?
+  localPath       String
+  filename        String
+
+  // Image metadata
+  width           Int
+  height          Int
+  fileSize        Int           // bytes
+  format          ImageFormat
+  quality         ImageQuality
+
+  // Content and accessibility
+  altText         String
+  caption         String?
+  description     String?       @db.Text
+
+  // Processing metadata
+  isProcessed     Boolean       @default(false)
+  processingDate  DateTime?
+  source          String        // 'download', 'upload', 'generated'
+  license         String?
+  attribution     String?
+
+  // Quality and validation
+  qualityScore    Float?        // 0-100
+  validationIssues String[]
+  isUsable        Boolean       @default(true)
+
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  variants        ImageVariant[]
+  qualityReports  ImageQualityReport[]
+
+  @@index([courseId])
+  @@index([category])
+  @@index([isProcessed])
+  @@index([qualityScore])
+  @@index([createdAt])
+}
+
+model ImageVariant {
+  id            String     @id @default(cuid())
+  mediaItemId   String
+  mediaItem     MediaItem  @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  courseId      String
+  course        Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // Variant specifications
+  size          String     // 'sm', 'md', 'lg', 'xl', 'thumbnail'
+  width         Int
+  height        Int
+  format        ImageFormat
+  quality       Int        // 1-100
+
+  // File information
+  filename      String
+  localPath     String
+  fileSize      Int        // bytes
+
+  // Optimization metadata
+  compressionRatio Float?
+  optimizedAt      DateTime  @default(now())
+
+  @@index([mediaItemId])
+  @@index([courseId])
+  @@index([size])
+}
+
+model ImageQualityReport {
+  id              String    @id @default(cuid())
+  mediaItemId     String
+  mediaItem       MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  // Quality metrics (0-100 scale)
+  overallScore    Float
+  sharpnessScore  Float
+  exposureScore   Float
+  colorScore      Float
+  resolutionScore Float
+
+  // Detailed analysis
+  issues          String[]
+  recommendations String[]
+
+  // Validation results
+  isUsable        Boolean
+  confidenceLevel String    // 'high', 'medium', 'low'
+
+  // Processing metadata
+  analysisMethod  String    // 'automated', 'manual', 'hybrid'
+  processingTime  Int?      // milliseconds
+
+  createdAt       DateTime  @default(now())
+
+  @@index([mediaItemId])
+  @@index([overallScore])
+  @@index([isUsable])
+}
+
+model MediaProcessingJob {
+  id              String    @id @default(cuid())
+  type            String    // 'download', 'optimize', 'enhance', 'validate', 'generate_alt_text'
+  status          String    // 'pending', 'processing', 'completed', 'failed'
+  priority        Int       @default(5)
+
+  // Target information
+  courseId        String?
+  mediaItemId     String?
+
+  // Job configuration
+  inputParams     Json
+  outputResults   Json?
+
+  // Progress tracking
+  totalItems      Int?
+  processedItems  Int       @default(0)
+  failedItems     Int       @default(0)
+
+  // Error handling
+  error           String?
+  retryCount      Int       @default(0)
+  maxRetries      Int       @default(3)
+
+  // Timing
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([courseId])
+  @@index([scheduledAt])
+}
+
+model MediaStorageMetrics {
+  id              String    @id @default(cuid())
+  courseId        String?   // null for global metrics
+
+  // Storage statistics
+  totalImages     Int       @default(0)
+  totalSizeMB     Float     @default(0.0)
+  originalSizeMB  Float     @default(0.0)
+  optimizedSizeMB Float     @default(0.0)
+
+  // Category breakdown
+  heroImages      Int       @default(0)
+  galleryImages   Int       @default(0)
+  mapImages       Int       @default(0)
+  amenityImages   Int       @default(0)
+  thumbnails      Int       @default(0)
+
+  // Quality metrics
+  averageQuality  Float?
+  usableImages    Int       @default(0)
+
+  // Processing statistics
+  processedImages Int       @default(0)
+  pendingImages   Int       @default(0)
+  failedImages    Int       @default(0)
+
+  // Timestamps
+  calculatedAt    DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([courseId])
+  @@index([calculatedAt])
 }
 
 model Configuration {

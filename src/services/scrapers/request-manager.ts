@@ -77,7 +77,10 @@ export class RequestManager {
   /**
    * Add request to queue
    */
-  async addRequest(target: ScrapingTarget, options?: Partial<ScrapingOptions>): Promise<ProcessingResult> {
+  async addRequest(
+    target: ScrapingTarget,
+    options?: Partial<ScrapingOptions>,
+  ): Promise<ProcessingResult> {
     return new Promise((resolve, reject) => {
       const request: QueuedRequest = {
         id: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -137,7 +140,6 @@ export class RequestManager {
 
         // Process request concurrently
         this.processRequest(request);
-
       } catch (error) {
         scrapingLogger.error('Error in queue processing loop', error);
         await this.delay(5000); // Wait 5 seconds on error
@@ -171,7 +173,7 @@ export class RequestManager {
       // Robots.txt check
       const robotsResult = await this.robotsChecker.canScrape(
         request.target.url,
-        request.options.userAgent!
+        request.options.userAgent!,
       );
 
       if (!robotsResult.allowed) {
@@ -200,7 +202,6 @@ export class RequestManager {
         processingTime: result.processingTime,
         confidence: result.confidence,
       });
-
     } catch (error) {
       const shouldRetry = this.shouldRetry(request, error);
 
@@ -220,7 +221,6 @@ export class RequestManager {
         setTimeout(() => {
           this.insertByPriority(request);
         }, this.calculateRetryDelay(request.retryCount));
-
       } else {
         // Final failure
         this.updateDomainStats(domain, false, 0);
@@ -391,17 +391,10 @@ export class RequestManager {
    * Check if URL requires JavaScript rendering
    */
   private requiresJavaScript(url: string): boolean {
-    const jsPatterns = [
-      'react',
-      'angular',
-      'vue',
-      'spa',
-      'ajax',
-      'dynamic',
-    ];
+    const jsPatterns = ['react', 'angular', 'vue', 'spa', 'ajax', 'dynamic'];
 
     const domain = this.extractDomain(url).toLowerCase();
-    return jsPatterns.some(pattern => domain.includes(pattern));
+    return jsPatterns.some((pattern) => domain.includes(pattern));
   }
 
   /**
@@ -436,7 +429,8 @@ export class RequestManager {
 
     if (success) {
       stats.success++;
-      stats.avgResponseTime = (stats.avgResponseTime * (stats.success - 1) + responseTime) / stats.success;
+      stats.avgResponseTime =
+        (stats.avgResponseTime * (stats.success - 1) + responseTime) / stats.success;
     } else {
       stats.failures++;
     }
@@ -527,6 +521,6 @@ export class RequestManager {
    * Utility delay function
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

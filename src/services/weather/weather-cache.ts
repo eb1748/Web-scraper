@@ -7,7 +7,7 @@ import type {
   CacheStats,
   CacheConfig,
 } from '../../types/api.types';
-import { WeatherService } from './weather-service';
+import type { WeatherService } from './weather-service';
 import { apiLogger } from '../../utils/logger';
 
 interface WeatherCacheKey {
@@ -91,7 +91,7 @@ export class WeatherCache {
   async getCurrentWeather(
     courseId: string,
     lat: number,
-    lon: number
+    lon: number,
   ): Promise<APIResponse<WeatherData>> {
     const cacheKey = this.generateCacheKey({ type: 'current', lat, lon, courseId });
     this.stats.totalRequests++;
@@ -147,7 +147,6 @@ export class WeatherCache {
       }
 
       return result;
-
     } catch (error) {
       apiLogger.error('Error in getCurrentWeather cache operation', error, {
         courseId,
@@ -178,7 +177,7 @@ export class WeatherCache {
   async get5DayForecast(
     courseId: string,
     lat: number,
-    lon: number
+    lon: number,
   ): Promise<APIResponse<WeatherData>> {
     const cacheKey = this.generateCacheKey({ type: 'forecast', lat, lon, courseId });
     this.stats.totalRequests++;
@@ -234,7 +233,6 @@ export class WeatherCache {
       }
 
       return result;
-
     } catch (error) {
       apiLogger.error('Error in get5DayForecast cache operation', error, {
         courseId,
@@ -264,7 +262,7 @@ export class WeatherCache {
   async getGolfWeather(
     courseId: string,
     lat: number,
-    lon: number
+    lon: number,
   ): Promise<APIResponse<GolfWeatherData>> {
     const cacheKey = this.generateCacheKey({ type: 'golf', lat, lon, courseId });
     this.stats.totalRequests++;
@@ -322,7 +320,6 @@ export class WeatherCache {
       }
 
       return result;
-
     } catch (error) {
       apiLogger.error('Error in getGolfWeather cache operation', error, {
         courseId,
@@ -388,8 +385,7 @@ export class WeatherCache {
         }
 
         // Add small delay to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 1100)); // Just over 1 second
-
+        await new Promise((resolve) => setTimeout(resolve, 1100)); // Just over 1 second
       } catch (error) {
         results.failed++;
         results.errors.push(`${course.id}: ${error.message}`);
@@ -425,9 +421,9 @@ export class WeatherCache {
       // Clear specific entries
       const keyPattern = courseId ? courseId : `${lat}-${lon}`;
 
-      [this.currentWeatherCache, this.forecastCache, this.golfCache].forEach(cache => {
-        const keys = cache.keys().filter(key => key.includes(keyPattern));
-        keys.forEach(key => {
+      [this.currentWeatherCache, this.forecastCache, this.golfCache].forEach((cache) => {
+        const keys = cache.keys().filter((key) => key.includes(keyPattern));
+        keys.forEach((key) => {
           if (cache.del(key)) clearedCount++;
         });
       });
@@ -464,7 +460,8 @@ export class WeatherCache {
     const hitRate = totalHits + totalMisses > 0 ? totalHits / (totalHits + totalMisses) : 0;
 
     // Calculate memory usage (approximate)
-    const memoryUsage = (currentStats.ksize || 0) + (forecastStats.ksize || 0) + (golfStats.ksize || 0);
+    const memoryUsage =
+      (currentStats.ksize || 0) + (forecastStats.ksize || 0) + (golfStats.ksize || 0);
 
     return {
       totalEntries,
@@ -489,9 +486,10 @@ export class WeatherCache {
     efficiency: number;
   } {
     const overall = this.getCacheStats();
-    const efficiency = this.stats.totalRequests > 0
-      ? Math.round((this.stats.apiCallsSaved / this.stats.totalRequests) * 100) / 100
-      : 0;
+    const efficiency =
+      this.stats.totalRequests > 0
+        ? Math.round((this.stats.apiCallsSaved / this.stats.totalRequests) * 100) / 100
+        : 0;
 
     return {
       overall,
@@ -549,8 +547,8 @@ export class WeatherCache {
   private getOldestEntry(): Date | undefined {
     const allEntries: Date[] = [];
 
-    [this.currentWeatherCache, this.forecastCache, this.golfCache].forEach(cache => {
-      cache.keys().forEach(key => {
+    [this.currentWeatherCache, this.forecastCache, this.golfCache].forEach((cache) => {
+      cache.keys().forEach((key) => {
         const entry = cache.get<CachedWeatherData<any>>(key);
         if (entry) {
           allEntries.push(entry.timestamp);
@@ -559,7 +557,7 @@ export class WeatherCache {
     });
 
     return allEntries.length > 0
-      ? new Date(Math.min(...allEntries.map(d => d.getTime())))
+      ? new Date(Math.min(...allEntries.map((d) => d.getTime())))
       : undefined;
   }
 
@@ -569,8 +567,8 @@ export class WeatherCache {
   private getNewestEntry(): Date | undefined {
     const allEntries: Date[] = [];
 
-    [this.currentWeatherCache, this.forecastCache, this.golfCache].forEach(cache => {
-      cache.keys().forEach(key => {
+    [this.currentWeatherCache, this.forecastCache, this.golfCache].forEach((cache) => {
+      cache.keys().forEach((key) => {
         const entry = cache.get<CachedWeatherData<any>>(key);
         if (entry) {
           allEntries.push(entry.timestamp);
@@ -579,7 +577,7 @@ export class WeatherCache {
     });
 
     return allEntries.length > 0
-      ? new Date(Math.max(...allEntries.map(d => d.getTime())))
+      ? new Date(Math.max(...allEntries.map((d) => d.getTime())))
       : undefined;
   }
 

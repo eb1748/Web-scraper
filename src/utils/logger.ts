@@ -51,10 +51,7 @@ const errorFileRotateTransport = new DailyRotateFile({
 const logger = winston.createLogger({
   level: config.logging.level,
   format: logFormat,
-  transports: [
-    fileRotateTransport,
-    errorFileRotateTransport,
-  ],
+  transports: [fileRotateTransport, errorFileRotateTransport],
   exitOnError: false,
 });
 
@@ -84,15 +81,16 @@ class CategoryLogger {
   }
 
   error(message: string, error?: Error | any, metadata?: any): void {
-    const errorData = error instanceof Error
-      ? {
-          errorMessage: error.message,
-          errorStack: error.stack,
-          errorName: error.name,
-        }
-      : error
-      ? { error }
-      : {};
+    const errorData =
+      error instanceof Error
+        ? {
+            errorMessage: error.message,
+            errorStack: error.stack,
+            errorName: error.name,
+          }
+        : error
+          ? { error }
+          : {};
 
     logger.error(message, {
       category: this.category,
@@ -132,12 +130,7 @@ class CategoryLogger {
   }
 
   // Special method for logging validation results
-  logValidation(
-    courseId: string,
-    validationType: string,
-    passed: boolean,
-    metadata?: any,
-  ): void {
+  logValidation(courseId: string, validationType: string, passed: boolean, metadata?: any): void {
     const level = passed ? 'info' : 'warn';
     logger.log(level, `Validation ${passed ? 'passed' : 'failed'}: ${validationType}`, {
       category: 'validation',

@@ -159,10 +159,7 @@ export class DatabaseManager {
         return await this.prisma.$transaction(fn);
       } catch (error) {
         attempts++;
-        systemLogger.error(
-          `Transaction failed (attempt ${attempts}/${retries})`,
-          error,
-        );
+        systemLogger.error(`Transaction failed (attempt ${attempts}/${retries})`, error);
 
         if (attempts >= retries) {
           throw error;

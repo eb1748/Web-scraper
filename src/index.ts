@@ -43,7 +43,6 @@ async function main(): Promise<void> {
         systemLogger.debug('Heartbeat');
       }, 60000); // Log heartbeat every minute
     }
-
   } catch (error) {
     systemLogger.error('Failed to start application', error);
     process.exit(1);

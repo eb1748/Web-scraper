@@ -41,9 +41,12 @@ abstract class BaseValidator<T> implements DataValidator<T> {
     return (
       typeof lat === 'number' &&
       typeof lon === 'number' &&
-      lat >= -90 && lat <= 90 &&
-      lon >= -180 && lon <= 180 &&
-      !isNaN(lat) && !isNaN(lon)
+      lat >= -90 &&
+      lat <= 90 &&
+      lon >= -180 &&
+      lon <= 180 &&
+      !isNaN(lat) &&
+      !isNaN(lon)
     );
   }
 
@@ -89,12 +92,12 @@ abstract class BaseValidator<T> implements DataValidator<T> {
    * Calculate confidence score based on data completeness
    */
   protected calculateConfidence(requiredFields: any[], optionalFields: any[]): number {
-    const requiredCount = requiredFields.filter(field =>
-      field !== null && field !== undefined && field !== ''
+    const requiredCount = requiredFields.filter(
+      (field) => field !== null && field !== undefined && field !== '',
     ).length;
 
-    const optionalCount = optionalFields.filter(field =>
-      field !== null && field !== undefined && field !== ''
+    const optionalCount = optionalFields.filter(
+      (field) => field !== null && field !== undefined && field !== '',
     ).length;
 
     const requiredScore = (requiredCount / requiredFields.length) * 70; // 70% for required fields
@@ -122,11 +125,19 @@ export class WeatherDataValidator extends BaseValidator<WeatherData> {
         warnings.push('Temperature seems extreme');
       }
 
-      if (typeof data.current.humidity !== 'number' || data.current.humidity < 0 || data.current.humidity > 100) {
+      if (
+        typeof data.current.humidity !== 'number' ||
+        data.current.humidity < 0 ||
+        data.current.humidity > 100
+      ) {
         errors.push('Invalid humidity value');
       }
 
-      if (typeof data.current.windSpeed !== 'number' || data.current.windSpeed < 0 || data.current.windSpeed > 200) {
+      if (
+        typeof data.current.windSpeed !== 'number' ||
+        data.current.windSpeed < 0 ||
+        data.current.windSpeed > 200
+      ) {
         warnings.push('Wind speed seems extreme');
       }
     }
@@ -198,7 +209,7 @@ export class WeatherDataValidator extends BaseValidator<WeatherData> {
 
     // Clean forecast data
     if (cleaned.forecast) {
-      cleaned.forecast = cleaned.forecast.map(day => ({
+      cleaned.forecast = cleaned.forecast.map((day) => ({
         ...day,
         conditions: this.cleanText(day.conditions),
         description: this.cleanText(day.description),
@@ -284,23 +295,23 @@ export class WikipediaDataValidator extends BaseValidator<WikipediaData> {
     // Clean arrays
     if (cleaned.majorChampionships) {
       cleaned.majorChampionships = cleaned.majorChampionships
-        .map(champ => this.cleanText(champ))
-        .filter(champ => champ.length > 0);
+        .map((champ) => this.cleanText(champ))
+        .filter((champ) => champ.length > 0);
     }
 
     if (cleaned.notableEvents) {
       cleaned.notableEvents = cleaned.notableEvents
-        .map(event => this.cleanText(event))
-        .filter(event => event.length > 0);
+        .map((event) => this.cleanText(event))
+        .filter((event) => event.length > 0);
     }
 
     // Validate and clean URLs
     if (cleaned.images) {
-      cleaned.images = cleaned.images.filter(img => this.isValidUrl(img));
+      cleaned.images = cleaned.images.filter((img) => this.isValidUrl(img));
     }
 
     if (cleaned.references) {
-      cleaned.references = cleaned.references.filter(ref => this.isValidUrl(ref));
+      cleaned.references = cleaned.references.filter((ref) => this.isValidUrl(ref));
     }
 
     // Limit array sizes
@@ -356,7 +367,7 @@ export class CourseHistoricalDataValidator extends BaseValidator<CourseHistorica
         }
 
         if (championship.years && Array.isArray(championship.years)) {
-          championship.years.forEach(year => {
+          championship.years.forEach((year) => {
             if (!this.isValidYear(year)) {
               warnings.push(`Invalid championship year: ${year}`);
             }
@@ -385,41 +396,43 @@ export class CourseHistoricalDataValidator extends BaseValidator<CourseHistorica
     // Clean arrays
     if (cleaned.coArchitects) {
       cleaned.coArchitects = cleaned.coArchitects
-        .map(arch => this.cleanText(arch))
-        .filter(arch => arch.length > 0)
+        .map((arch) => this.cleanText(arch))
+        .filter((arch) => arch.length > 0)
         .slice(0, 5); // Limit to 5 co-architects
     }
 
     if (cleaned.renovationArchitects) {
       cleaned.renovationArchitects = cleaned.renovationArchitects
-        .map(arch => this.cleanText(arch))
-        .filter(arch => arch.length > 0)
+        .map((arch) => this.cleanText(arch))
+        .filter((arch) => arch.length > 0)
         .slice(0, 5);
     }
 
     if (cleaned.notableFeatures) {
       cleaned.notableFeatures = cleaned.notableFeatures
-        .map(feature => this.cleanText(feature))
-        .filter(feature => feature.length > 0)
+        .map((feature) => this.cleanText(feature))
+        .filter((feature) => feature.length > 0)
         .slice(0, 10);
     }
 
     // Sort and validate years
     if (cleaned.renovationYears) {
       cleaned.renovationYears = cleaned.renovationYears
-        .filter(year => this.isValidYear(year))
+        .filter((year) => this.isValidYear(year))
         .sort((a, b) => a - b);
     }
 
     // Clean championship data
     if (cleaned.majorChampionships) {
       cleaned.majorChampionships = cleaned.majorChampionships
-        .map(championship => ({
+        .map((championship) => ({
           ...championship,
           tournament: this.cleanText(championship.tournament),
-          years: championship.years ? championship.years.filter(year => this.isValidYear(year)).sort() : [],
+          years: championship.years
+            ? championship.years.filter((year) => this.isValidYear(year)).sort()
+            : [],
         }))
-        .filter(championship => championship.tournament.length > 0);
+        .filter((championship) => championship.tournament.length > 0);
     }
 
     return cleaned;
@@ -453,7 +466,7 @@ export class OSMDataValidator extends BaseValidator<OSMCourseData> {
 
     // Validate nearby features
     if (data.nearbyFeatures) {
-      ['hotels', 'restaurants', 'airports', 'attractions'].forEach(category => {
+      ['hotels', 'restaurants', 'airports', 'attractions'].forEach((category) => {
         const features = data.nearbyFeatures[category as keyof typeof data.nearbyFeatures];
         if (features && Array.isArray(features)) {
           features.forEach((poi, index) => {
@@ -496,29 +509,29 @@ export class OSMDataValidator extends BaseValidator<OSMCourseData> {
     // Clean amenities and features
     if (cleaned.amenities) {
       cleaned.amenities = cleaned.amenities
-        .map(amenity => this.cleanText(amenity))
-        .filter(amenity => amenity.length > 0);
+        .map((amenity) => this.cleanText(amenity))
+        .filter((amenity) => amenity.length > 0);
     }
 
     if (cleaned.features) {
       cleaned.features = cleaned.features
-        .map(feature => this.cleanText(feature))
-        .filter(feature => feature.length > 0);
+        .map((feature) => this.cleanText(feature))
+        .filter((feature) => feature.length > 0);
     }
 
     // Clean POI data
     if (cleaned.nearbyFeatures) {
-      ['hotels', 'restaurants', 'airports', 'attractions'].forEach(category => {
+      ['hotels', 'restaurants', 'airports', 'attractions'].forEach((category) => {
         const features = cleaned.nearbyFeatures[category as keyof typeof cleaned.nearbyFeatures];
         if (features && Array.isArray(features)) {
           cleaned.nearbyFeatures[category as keyof typeof cleaned.nearbyFeatures] = features
-            .map(poi => ({
+            .map((poi) => ({
               ...poi,
               name: this.cleanText(poi.name),
               type: this.cleanText(poi.type),
               address: poi.address ? this.cleanText(poi.address) : undefined,
             }))
-            .filter(poi => poi.name.length > 0)
+            .filter((poi) => poi.name.length > 0)
             .slice(0, 20); // Limit POIs per category
         }
       });
@@ -544,39 +557,46 @@ export class CourseEnrichmentValidator extends BaseValidator<CourseEnrichmentDat
     // Validate individual components
     if (data.weather) {
       const weatherResult = this.weatherValidator.validate(data.weather);
-      errors.push(...weatherResult.errors.map(e => `Weather: ${e}`));
-      warnings.push(...weatherResult.warnings.map(w => `Weather: ${w}`));
+      errors.push(...weatherResult.errors.map((e) => `Weather: ${e}`));
+      warnings.push(...weatherResult.warnings.map((w) => `Weather: ${w}`));
     }
 
     if (data.historical) {
       const historicalResult = this.historicalValidator.validate(data.historical);
-      errors.push(...historicalResult.errors.map(e => `Historical: ${e}`));
-      warnings.push(...historicalResult.warnings.map(w => `Historical: ${w}`));
+      errors.push(...historicalResult.errors.map((e) => `Historical: ${e}`));
+      warnings.push(...historicalResult.warnings.map((w) => `Historical: ${w}`));
     }
 
     if (data.location) {
       const locationResult = this.osmValidator.validate(data.location);
-      errors.push(...locationResult.errors.map(e => `Location: ${e}`));
-      warnings.push(...locationResult.warnings.map(w => `Location: ${w}`));
+      errors.push(...locationResult.errors.map((e) => `Location: ${e}`));
+      warnings.push(...locationResult.warnings.map((w) => `Location: ${w}`));
     }
 
     // Validate enrichment metadata
     if (!data.enrichmentMetadata) {
       errors.push('Enrichment metadata is missing');
     } else {
-      if (!Array.isArray(data.enrichmentMetadata.sources) || data.enrichmentMetadata.sources.length === 0) {
+      if (
+        !Array.isArray(data.enrichmentMetadata.sources) ||
+        data.enrichmentMetadata.sources.length === 0
+      ) {
         warnings.push('No data sources specified');
       }
 
-      if (typeof data.enrichmentMetadata.confidence !== 'number' ||
-          data.enrichmentMetadata.confidence < 0 ||
-          data.enrichmentMetadata.confidence > 100) {
+      if (
+        typeof data.enrichmentMetadata.confidence !== 'number' ||
+        data.enrichmentMetadata.confidence < 0 ||
+        data.enrichmentMetadata.confidence > 100
+      ) {
         errors.push('Invalid confidence score');
       }
 
-      if (typeof data.enrichmentMetadata.dataCompleteness !== 'number' ||
-          data.enrichmentMetadata.dataCompleteness < 0 ||
-          data.enrichmentMetadata.dataCompleteness > 100) {
+      if (
+        typeof data.enrichmentMetadata.dataCompleteness !== 'number' ||
+        data.enrichmentMetadata.dataCompleteness < 0 ||
+        data.enrichmentMetadata.dataCompleteness > 100
+      ) {
         errors.push('Invalid data completeness score');
       }
     }
@@ -610,12 +630,12 @@ export class CourseEnrichmentValidator extends BaseValidator<CourseEnrichmentDat
     // Clean metadata
     if (cleaned.enrichmentMetadata) {
       cleaned.enrichmentMetadata.sources = cleaned.enrichmentMetadata.sources
-        .filter(source => source && source.trim().length > 0)
-        .map(source => source.trim());
+        .filter((source) => source && source.trim().length > 0)
+        .map((source) => source.trim());
 
       cleaned.enrichmentMetadata.errors = cleaned.enrichmentMetadata.errors
-        .filter(error => error && error.trim().length > 0)
-        .map(error => error.trim());
+        .filter((error) => error && error.trim().length > 0)
+        .map((error) => error.trim());
 
       // Recalculate confidence and completeness
       cleaned.enrichmentMetadata.confidence = this.calculateOverallConfidence(cleaned);
@@ -660,7 +680,9 @@ export class CourseEnrichmentValidator extends BaseValidator<CourseEnrichmentDat
       scores.push(this.calculateConfidence(requiredFields, optionalFields));
     }
 
-    return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0;
+    return scores.length > 0
+      ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+      : 0;
   }
 
   /**
@@ -755,7 +777,10 @@ export class DataValidationUtility {
   /**
    * Validate and clean data in one operation
    */
-  validateAndClean<T>(type: keyof typeof this.validators, data: T): {
+  validateAndClean<T>(
+    type: keyof typeof this.validators,
+    data: T,
+  ): {
     result: ValidationResult;
     cleanedData: T;
   } {

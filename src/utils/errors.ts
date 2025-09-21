@@ -8,11 +8,7 @@ export abstract class BaseError extends Error {
   public readonly statusCode: number;
   public readonly timestamp: Date;
 
-  constructor(
-    message: string,
-    statusCode: number = 500,
-    isOperational: boolean = true,
-  ) {
+  constructor(message: string, statusCode: number = 500, isOperational: boolean = true) {
     super(message);
     this.name = this.constructor.name;
     this.statusCode = statusCode;
@@ -42,12 +38,7 @@ export class NetworkError extends BaseError {
   public readonly method?: string;
   public readonly responseStatus?: number;
 
-  constructor(
-    message: string,
-    url?: string,
-    method?: string,
-    responseStatus?: number,
-  ) {
+  constructor(message: string, url?: string, method?: string, responseStatus?: number) {
     super(message, 502, true);
     this.url = url;
     this.method = method;
@@ -154,12 +145,7 @@ export class ScrapingError extends BaseError {
   public readonly url?: string;
   public readonly step?: string;
 
-  constructor(
-    message: string,
-    courseId?: string,
-    url?: string,
-    step?: string,
-  ) {
+  constructor(message: string, courseId?: string, url?: string, step?: string) {
     super(message, 500, true);
     this.courseId = courseId;
     this.url = url;
@@ -175,12 +161,7 @@ export class APIError extends BaseError {
   public readonly endpoint?: string;
   public readonly responseData?: any;
 
-  constructor(
-    api: string,
-    message: string,
-    endpoint?: string,
-    responseData?: any,
-  ) {
+  constructor(api: string, message: string, endpoint?: string, responseData?: any) {
     super(message, 502, true);
     this.api = api;
     this.endpoint = endpoint;
@@ -196,12 +177,7 @@ export class ProcessingError extends BaseError {
   public readonly itemId?: string;
   public readonly stage?: string;
 
-  constructor(
-    processType: string,
-    message: string,
-    itemId?: string,
-    stage?: string,
-  ) {
+  constructor(processType: string, message: string, itemId?: string, stage?: string) {
     super(message, 500, true);
     this.processType = processType;
     this.itemId = itemId;
@@ -322,13 +298,7 @@ export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   options: RetryOptions = {},
 ): Promise<T> {
-  const {
-    maxAttempts = 3,
-    baseDelay = 1000,
-    maxDelay = 30000,
-    factor = 2,
-    onRetry,
-  } = options;
+  const { maxAttempts = 3, baseDelay = 1000, maxDelay = 30000, factor = 2, onRetry } = options;
 
   let lastError: Error | undefined;
 
@@ -349,10 +319,9 @@ export async function retryWithBackoff<T>(
         onRetry(attempt, delay, lastError);
       }
 
-      systemLogger.debug(
-        `Retry attempt ${attempt}/${maxAttempts} after ${delay}ms`,
-        { error: lastError.message },
-      );
+      systemLogger.debug(`Retry attempt ${attempt}/${maxAttempts} after ${delay}ms`, {
+        error: lastError.message,
+      });
 
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
@@ -412,17 +381,14 @@ export class CircuitBreaker {
 
     if (this.failures >= this.threshold) {
       this.state = 'OPEN';
-      systemLogger.warn(
-        `Circuit breaker opened after ${this.failures} failures`,
-      );
+      systemLogger.warn(`Circuit breaker opened after ${this.failures} failures`);
     }
   }
 
   private shouldAttemptReset(): boolean {
     if (!this.lastFailureTime) return true;
 
-    const timeSinceLastFailure =
-      Date.now() - this.lastFailureTime.getTime();
+    const timeSinceLastFailure = Date.now() - this.lastFailureTime.getTime();
     return timeSinceLastFailure >= this.timeout;
   }
 
@@ -446,10 +412,6 @@ process.on('uncaughtException', (error: Error) => {
 
 process.on('unhandledRejection', (reason: any) => {
   systemLogger.error('Unhandled rejection:', reason);
-  errorHandler.handle(new BaseError(
-    reason?.message || 'Unhandled promise rejection',
-    500,
-    false,
-  ));
+  errorHandler.handle(new BaseError(reason?.message || 'Unhandled promise rejection', 500, false));
   process.exit(1);
 });

@@ -1,4 +1,5 @@
-import axios, { AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 import type {
   WikipediaSearchResponse,
@@ -29,7 +30,7 @@ export class WikipediaService {
    */
   async searchCourseArticle(
     courseName: string,
-    location: string
+    location: string,
   ): Promise<APIResponse<string | null>> {
     const requestId = `wiki-search-${Date.now()}`;
     const startTime = Date.now();
@@ -61,16 +62,13 @@ export class WikipediaService {
           srprop: 'snippet|titlesnippet|size|wordcount',
         };
 
-        const response: AxiosResponse<WikipediaSearchResponse> = await axios.get(
-          this.searchUrl,
-          {
-            params: searchParams,
-            timeout: this.timeout,
-            headers: {
-              'User-Agent': config.scraping.userAgent,
-            },
-          }
-        );
+        const response: AxiosResponse<WikipediaSearchResponse> = await axios.get(this.searchUrl, {
+          params: searchParams,
+          timeout: this.timeout,
+          headers: {
+            'User-Agent': config.scraping.userAgent,
+          },
+        });
 
         this.incrementRequestCount();
 
@@ -78,7 +76,7 @@ export class WikipediaService {
         const relevantArticle = this.findMostRelevantArticle(
           response.data.query.search,
           courseName,
-          location
+          location,
         );
 
         if (relevantArticle) {
@@ -101,7 +99,7 @@ export class WikipediaService {
         }
 
         // Small delay between search attempts
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       // No relevant article found
@@ -120,7 +118,6 @@ export class WikipediaService {
         requestId,
         processingTime,
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError = this.createAPIError('searchCourseArticle', error);
@@ -173,10 +170,7 @@ export class WikipediaService {
       }
 
       // Combine and process the data
-      const wikipediaData = this.combineWikipediaData(
-        contentResult.data!,
-        wikidataResult.data
-      );
+      const wikipediaData = this.combineWikipediaData(contentResult.data!, wikidataResult.data);
 
       const processingTime = Date.now() - startTime;
 
@@ -196,7 +190,6 @@ export class WikipediaService {
         requestId,
         processingTime,
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError = this.createAPIError('extractCourseData', error);
@@ -231,7 +224,7 @@ export class WikipediaService {
           headers: {
             'User-Agent': config.scraping.userAgent,
           },
-        }
+        },
       );
 
       this.incrementRequestCount();
@@ -243,7 +236,6 @@ export class WikipediaService {
         requestId: `content-${Date.now()}`,
         processingTime: 0,
       };
-
     } catch (error) {
       apiLogger.warn(`Failed to fetch article content for: ${title}`, error);
 
@@ -257,16 +249,13 @@ export class WikipediaService {
           disableeditsection: 1,
         };
 
-        const response: AxiosResponse<WikipediaPageResponse> = await axios.get(
-          this.searchUrl,
-          {
-            params,
-            timeout: this.timeout,
-            headers: {
-              'User-Agent': config.scraping.userAgent,
-            },
-          }
-        );
+        const response: AxiosResponse<WikipediaPageResponse> = await axios.get(this.searchUrl, {
+          params,
+          timeout: this.timeout,
+          headers: {
+            'User-Agent': config.scraping.userAgent,
+          },
+        });
 
         this.incrementRequestCount();
 
@@ -277,7 +266,6 @@ export class WikipediaService {
           requestId: `content-alt-${Date.now()}`,
           processingTime: 0,
         };
-
       } catch (altError) {
         return {
           success: false,
@@ -306,16 +294,13 @@ export class WikipediaService {
         props: 'claims|labels|descriptions',
       };
 
-      const response: AxiosResponse<WikidataResponse> = await axios.get(
-        this.wikidataUrl,
-        {
-          params: wikidataParams,
-          timeout: this.timeout,
-          headers: {
-            'User-Agent': config.scraping.userAgent,
-          },
-        }
-      );
+      const response: AxiosResponse<WikidataResponse> = await axios.get(this.wikidataUrl, {
+        params: wikidataParams,
+        timeout: this.timeout,
+        headers: {
+          'User-Agent': config.scraping.userAgent,
+        },
+      });
 
       this.incrementRequestCount();
 
@@ -326,7 +311,6 @@ export class WikipediaService {
         requestId: `wikidata-${Date.now()}`,
         processingTime: 0,
       };
-
     } catch (error) {
       apiLogger.warn(`Failed to fetch Wikidata for: ${title}`, error);
 
@@ -346,14 +330,14 @@ export class WikipediaService {
   private findMostRelevantArticle(
     searchResults: any[],
     courseName: string,
-    location: string
+    location: string,
   ): string | null {
     if (!searchResults || searchResults.length === 0) {
       return null;
     }
 
     // Score each result based on relevance
-    const scoredResults = searchResults.map(result => {
+    const scoredResults = searchResults.map((result) => {
       let score = 0;
       const title = result.title.toLowerCase();
       const snippet = result.snippet.toLowerCase();
@@ -367,7 +351,7 @@ export class WikipediaService {
 
       // Medium score for partial course name match
       const courseWords = courseNameLower.split(' ');
-      courseWords.forEach(word => {
+      courseWords.forEach((word) => {
         if (word.length > 2 && title.includes(word)) {
           score += 15;
         }
@@ -405,7 +389,7 @@ export class WikipediaService {
 
     // Sort by score and return the best match
     const bestMatch = scoredResults
-      .filter(result => result.score > 20) // Minimum relevance threshold
+      .filter((result) => result.score > 20) // Minimum relevance threshold
       .sort((a, b) => b.score - a.score)[0];
 
     return bestMatch ? bestMatch.title : null;
@@ -461,7 +445,6 @@ export class WikipediaService {
       if (wikidataResponse && wikidataResponse.entities) {
         this.enhanceWithWikidata(result, wikidataResponse);
       }
-
     } catch (error) {
       apiLogger.warn('Error processing Wikipedia content', error);
     }
@@ -481,10 +464,15 @@ export class WikipediaService {
     ];
 
     // Check infobox first
-    const infoboxArchitect = $('.infobox tr').filter((_, el) => {
-      const text = $(el).text().toLowerCase();
-      return text.includes('architect') || text.includes('designer');
-    }).find('td').last().text().trim();
+    const infoboxArchitect = $('.infobox tr')
+      .filter((_, el) => {
+        const text = $(el).text().toLowerCase();
+        return text.includes('architect') || text.includes('designer');
+      })
+      .find('td')
+      .last()
+      .text()
+      .trim();
 
     if (infoboxArchitect && infoboxArchitect.length > 0) {
       return this.cleanArchitectName(infoboxArchitect);
@@ -515,10 +503,15 @@ export class WikipediaService {
     ];
 
     // Check infobox first
-    const infoboxOpened = $('.infobox tr').filter((_, el) => {
-      const text = $(el).text().toLowerCase();
-      return text.includes('opened') || text.includes('established') || text.includes('built');
-    }).find('td').last().text().trim();
+    const infoboxOpened = $('.infobox tr')
+      .filter((_, el) => {
+        const text = $(el).text().toLowerCase();
+        return text.includes('opened') || text.includes('established') || text.includes('built');
+      })
+      .find('td')
+      .last()
+      .text()
+      .trim();
 
     if (infoboxOpened) {
       const yearMatch = infoboxOpened.match(/(\d{4})/);
@@ -565,13 +558,15 @@ export class WikipediaService {
 
     const textContent = $.text().toLowerCase();
 
-    majorChampionships.forEach(championship => {
+    majorChampionships.forEach((championship) => {
       if (textContent.includes(championship)) {
         // Try to extract years
         const pattern = new RegExp(`${championship}[^.]*?(\\d{4}(?:,\\s*\\d{4})*)`, 'gi');
         const match = textContent.match(pattern);
         if (match) {
-          championships.push(`${championship} (${match[0].match(/\d{4}/g)?.join(', ') || 'year unknown'})`);
+          championships.push(
+            `${championship} (${match[0].match(/\d{4}/g)?.join(', ') || 'year unknown'})`,
+          );
         } else {
           championships.push(championship);
         }
@@ -590,11 +585,16 @@ export class WikipediaService {
     // Look for tournament sections
     $('h2, h3').each((_, el) => {
       const heading = $(el).text().toLowerCase();
-      if (heading.includes('tournament') || heading.includes('championship') ||
-          heading.includes('event') || heading.includes('history')) {
-
+      if (
+        heading.includes('tournament') ||
+        heading.includes('championship') ||
+        heading.includes('event') ||
+        heading.includes('history')
+      ) {
         const section = $(el).nextUntil('h2, h3').text();
-        const eventMatches = section.match(/(\d{4}[^.]*(?:tournament|championship|cup|open)[^.]*)/gi);
+        const eventMatches = section.match(
+          /(\d{4}[^.]*(?:tournament|championship|cup|open)[^.]*)/gi,
+        );
 
         if (eventMatches) {
           events.push(...eventMatches.slice(0, 5)); // Limit to 5 events per section
@@ -643,10 +643,14 @@ export class WikipediaService {
    * Extract history section
    */
   private extractHistorySection($: cheerio.CheerioAPI): string {
-    const historyHeading = $('h2, h3').filter((_, el) => {
-      const text = $(el).text().toLowerCase();
-      return text.includes('history') || text.includes('background') || text.includes('development');
-    }).first();
+    const historyHeading = $('h2, h3')
+      .filter((_, el) => {
+        const text = $(el).text().toLowerCase();
+        return (
+          text.includes('history') || text.includes('background') || text.includes('development')
+        );
+      })
+      .first();
 
     if (historyHeading.length) {
       const historyContent = historyHeading.nextUntil('h2, h3').text();
@@ -677,14 +681,17 @@ export class WikipediaService {
       }
 
       // Extract opening date (P571) if not already found
-      if (!result.openingYear && entity.claims.P571 && entity.claims.P571[0]?.mainsnak?.datavalue?.value) {
+      if (
+        !result.openingYear &&
+        entity.claims.P571 &&
+        entity.claims.P571[0]?.mainsnak?.datavalue?.value
+      ) {
         const date = entity.claims.P571[0].mainsnak.datavalue.value.time;
         const yearMatch = date.match(/(\d{4})/);
         if (yearMatch) {
           result.openingYear = parseInt(yearMatch[1], 10);
         }
       }
-
     } catch (error) {
       apiLogger.warn('Error enhancing with Wikidata', error);
     }
@@ -728,7 +735,7 @@ export class WikipediaService {
       const waitTime = 60000 - (now - this.lastReset);
       if (waitTime > 0) {
         apiLogger.warn(`Wikipedia rate limit reached, waiting ${waitTime}ms`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
         this.requestCount = 0;
         this.lastReset = Date.now();
       }

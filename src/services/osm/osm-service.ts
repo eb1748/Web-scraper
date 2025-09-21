@@ -1,4 +1,5 @@
-import axios, { AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
+import axios from 'axios';
 import type {
   OSMCourseData,
   OverpassResponse,
@@ -49,7 +50,7 @@ export class OSMService {
   async findCourseLocation(
     courseName: string,
     city: string,
-    state: string
+    state: string,
   ): Promise<APIResponse<OSMCourseData | null>> {
     const requestId = `osm-course-${Date.now()}`;
     const startTime = Date.now();
@@ -83,16 +84,13 @@ export class OSMService {
                 'Content-Type': 'text/plain',
                 'User-Agent': config.scraping.userAgent,
               },
-            }
+            },
           );
 
           this.incrementRequestCount();
 
           if (response.data.elements && response.data.elements.length > 0) {
-            const courseData = await this.processCourseLocation(
-              response.data,
-              courseName
-            );
+            const courseData = await this.processCourseLocation(response.data, courseName);
 
             if (courseData) {
               const processingTime = Date.now() - startTime;
@@ -116,8 +114,7 @@ export class OSMService {
           }
 
           // Small delay between attempts
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (strategyError) {
           apiLogger.warn(`Strategy ${i + 1} failed for ${courseName}`, strategyError);
           continue; // Try next strategy
@@ -148,7 +145,6 @@ export class OSMService {
         requestId,
         processingTime,
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError = this.createAPIError('findCourseLocation', error);
@@ -177,7 +173,7 @@ export class OSMService {
   async getNearbyAmenities(
     lat: number,
     lon: number,
-    radiusKm: number = 10
+    radiusKm: number = 10,
   ): Promise<APIResponse<POI[]>> {
     const requestId = `osm-amenities-${Date.now()}`;
     const startTime = Date.now();
@@ -193,17 +189,13 @@ export class OSMService {
 
       const query = this.createAmenitiesQuery(lat, lon, radiusKm);
 
-      const response: AxiosResponse<OverpassResponse> = await axios.post(
-        this.overpassUrl,
-        query,
-        {
-          timeout: this.timeout,
-          headers: {
-            'Content-Type': 'text/plain',
-            'User-Agent': config.scraping.userAgent,
-          },
-        }
-      );
+      const response: AxiosResponse<OverpassResponse> = await axios.post(this.overpassUrl, query, {
+        timeout: this.timeout,
+        headers: {
+          'Content-Type': 'text/plain',
+          'User-Agent': config.scraping.userAgent,
+        },
+      });
 
       this.incrementRequestCount();
 
@@ -224,7 +216,6 @@ export class OSMService {
         requestId,
         processingTime,
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError = this.createAPIError('getNearbyAmenities', error);
@@ -252,7 +243,7 @@ export class OSMService {
   async getCourseDetails(
     lat: number,
     lon: number,
-    radiusM: number = 2000
+    radiusM: number = 2000,
   ): Promise<APIResponse<Partial<OSMCourseData>>> {
     const requestId = `osm-details-${Date.now()}`;
     const startTime = Date.now();
@@ -268,17 +259,13 @@ export class OSMService {
 
       const query = this.createCourseDetailsQuery(lat, lon, radiusM);
 
-      const response: AxiosResponse<OverpassResponse> = await axios.post(
-        this.overpassUrl,
-        query,
-        {
-          timeout: this.timeout,
-          headers: {
-            'Content-Type': 'text/plain',
-            'User-Agent': config.scraping.userAgent,
-          },
-        }
-      );
+      const response: AxiosResponse<OverpassResponse> = await axios.post(this.overpassUrl, query, {
+        timeout: this.timeout,
+        headers: {
+          'Content-Type': 'text/plain',
+          'User-Agent': config.scraping.userAgent,
+        },
+      });
 
       this.incrementRequestCount();
 
@@ -299,7 +286,6 @@ export class OSMService {
         requestId,
         processingTime,
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const apiError = this.createAPIError('getCourseDetails', error);
@@ -328,7 +314,7 @@ export class OSMService {
     courseName: string,
     city: string,
     state: string,
-    strategy: 'exact' | 'fuzzy' | 'location'
+    strategy: 'exact' | 'fuzzy' | 'location',
   ): string {
     const escapedName = courseName.replace(/"/g, '\\"');
 
@@ -344,7 +330,7 @@ export class OSMService {
         `;
 
       case 'fuzzy':
-        const nameWords = courseName.split(' ').filter(word => word.length > 2);
+        const nameWords = courseName.split(' ').filter((word) => word.length > 2);
         const fuzzyPattern = nameWords.join('.*');
         return `
           [out:json][timeout:25];
@@ -429,15 +415,15 @@ export class OSMService {
    */
   private async processCourseLocation(
     data: OverpassResponse,
-    targetCourseName: string
+    targetCourseName: string,
   ): Promise<OSMCourseData | null> {
     if (!data.elements || data.elements.length === 0) {
       return null;
     }
 
     // Find the best matching course
-    const golfCourses = data.elements.filter(element =>
-      element.tags && element.tags.leisure === 'golf_course'
+    const golfCourses = data.elements.filter(
+      (element) => element.tags && element.tags.leisure === 'golf_course',
     );
 
     if (golfCourses.length === 0) {
@@ -445,14 +431,14 @@ export class OSMService {
     }
 
     // Score courses by name similarity
-    const scoredCourses = golfCourses.map(course => {
+    const scoredCourses = golfCourses.map((course) => {
       const name = course.tags?.name || '';
       const similarity = this.calculateNameSimilarity(name, targetCourseName);
       return { course, similarity };
     });
 
     const bestMatch = scoredCourses
-      .filter(item => item.similarity > 0.3)
+      .filter((item) => item.similarity > 0.3)
       .sort((a, b) => b.similarity - a.similarity)[0];
 
     if (!bestMatch) {
@@ -498,19 +484,18 @@ export class OSMService {
   /**
    * Process nearby amenities
    */
-  private processNearbyAmenities(data: OverpassResponse, centerLat: number, centerLon: number): POI[] {
+  private processNearbyAmenities(
+    data: OverpassResponse,
+    centerLat: number,
+    centerLon: number,
+  ): POI[] {
     const pois: POI[] = [];
 
-    data.elements.forEach(element => {
+    data.elements.forEach((element) => {
       const coordinates = this.calculateElementCenter(element);
       if (!coordinates) return;
 
-      const distance = this.calculateDistance(
-        centerLat,
-        centerLon,
-        coordinates[1],
-        coordinates[0]
-      );
+      const distance = this.calculateDistance(centerLat, centerLon, coordinates[1], coordinates[0]);
 
       const poi: POI = {
         id: `${element.type}-${element.id}`,
@@ -530,9 +515,7 @@ export class OSMService {
     });
 
     // Sort by distance and limit results
-    return pois
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 50); // Limit to 50 nearest POIs
+    return pois.sort((a, b) => a.distance - b.distance).slice(0, 50); // Limit to 50 nearest POIs
   }
 
   /**
@@ -552,7 +535,7 @@ export class OSMService {
     const amenities = new Set<string>();
     const features = new Set<string>();
 
-    data.elements.forEach(element => {
+    data.elements.forEach((element) => {
       if (!element.tags) return;
 
       // Collect amenities
@@ -591,28 +574,25 @@ export class OSMService {
   private async fallbackToNominatim(
     courseName: string,
     city: string,
-    state: string
+    state: string,
   ): Promise<APIResponse<OSMCourseData | null>> {
     try {
       await this.checkRateLimit('nominatim');
 
       const query = `${courseName} golf course ${city} ${state}`;
 
-      const response: AxiosResponse<NominatimResponse[]> = await axios.get(
-        this.nominatimUrl,
-        {
-          params: {
-            q: query,
-            format: 'json',
-            addressdetails: 1,
-            limit: 5,
-          },
-          timeout: this.timeout,
-          headers: {
-            'User-Agent': config.scraping.userAgent,
-          },
-        }
-      );
+      const response: AxiosResponse<NominatimResponse[]> = await axios.get(this.nominatimUrl, {
+        params: {
+          q: query,
+          format: 'json',
+          addressdetails: 1,
+          limit: 5,
+        },
+        timeout: this.timeout,
+        headers: {
+          'User-Agent': config.scraping.userAgent,
+        },
+      });
 
       if (response.data && response.data.length > 0) {
         const best = response.data[0];
@@ -663,7 +643,6 @@ export class OSMService {
         requestId: `nominatim-${Date.now()}`,
         processingTime: 0,
       };
-
     } catch (error) {
       apiLogger.warn('Nominatim fallback failed', error);
       return {
@@ -688,8 +667,8 @@ export class OSMService {
     if (element.type === 'way') {
       const way = element as OSMWay;
       if (way.geometry && way.geometry.length > 0) {
-        const lats = way.geometry.map(coord => coord.lat);
-        const lons = way.geometry.map(coord => coord.lon);
+        const lats = way.geometry.map((coord) => coord.lat);
+        const lons = way.geometry.map((coord) => coord.lon);
 
         const centerLat = lats.reduce((sum, lat) => sum + lat, 0) / lats.length;
         const centerLon = lons.reduce((sum, lon) => sum + lon, 0) / lons.length;
@@ -707,15 +686,15 @@ export class OSMService {
    */
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371e3; // Earth's radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
   }
@@ -724,10 +703,12 @@ export class OSMService {
    * Calculate name similarity
    */
   private calculateNameSimilarity(name1: string, name2: string): number {
-    const normalize = (str: string) => str.toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const normalize = (str: string) =>
+      str
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 
     const n1 = normalize(name1);
     const n2 = normalize(name2);
@@ -737,7 +718,7 @@ export class OSMService {
     const words1 = n1.split(' ');
     const words2 = n2.split(' ');
 
-    const commonWords = words1.filter(word => words2.includes(word)).length;
+    const commonWords = words1.filter((word) => words2.includes(word)).length;
     const totalWords = Math.max(words1.length, words2.length);
 
     return commonWords / totalWords;
@@ -748,7 +729,8 @@ export class OSMService {
    */
   private extractAddressFromTags(tags: { [key: string]: string }): OSMCourseData['address'] {
     return {
-      street: tags['addr:street'] || tags['addr:housenumber'] + ' ' + tags['addr:street'] || undefined,
+      street:
+        tags['addr:street'] || tags['addr:housenumber'] + ' ' + tags['addr:street'] || undefined,
       city: tags['addr:city'] || undefined,
       state: tags['addr:state'] || undefined,
       country: tags['addr:country'] || undefined,
@@ -803,7 +785,8 @@ export class OSMService {
    * Rate limiting check
    */
   private async checkRateLimit(service: 'overpass' | 'nominatim' = 'overpass'): Promise<void> {
-    const limit = service === 'overpass' ? config.api.overpassRateLimit : config.api.nominatimRateLimit;
+    const limit =
+      service === 'overpass' ? config.api.overpassRateLimit : config.api.nominatimRateLimit;
     const now = Date.now();
     const minutesPassed = (now - this.lastReset) / 60000;
 
@@ -816,7 +799,7 @@ export class OSMService {
       const waitTime = 60000 - (now - this.lastReset);
       if (waitTime > 0) {
         apiLogger.warn(`${service} rate limit reached, waiting ${waitTime}ms`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
         this.requestCount = 0;
         this.lastReset = Date.now();
       }

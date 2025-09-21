@@ -45,7 +45,7 @@ class CourseScrapingOrchestrator {
       await db.connect();
 
       // Get course targets
-      const targets = courseTargets || await this.getScrapingTargets();
+      const targets = courseTargets || (await this.getScrapingTargets());
       this.session.totalCourses = targets.length;
 
       scrapingLogger.info(`Found ${targets.length} courses to scrape`);
@@ -56,13 +56,19 @@ class CourseScrapingOrchestrator {
 
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
-        scrapingLogger.info(`Processing batch ${i + 1}/${batches.length} (${batch.length} courses)`);
+        scrapingLogger.info(
+          `Processing batch ${i + 1}/${batches.length} (${batch.length} courses)`,
+        );
 
         await this.processBatch(batch);
 
         // Log progress
-        const progress = Math.round((this.session.processedCourses / this.session.totalCourses) * 100);
-        scrapingLogger.info(`Progress: ${progress}% (${this.session.processedCourses}/${this.session.totalCourses})`);
+        const progress = Math.round(
+          (this.session.processedCourses / this.session.totalCourses) * 100,
+        );
+        scrapingLogger.info(
+          `Progress: ${progress}% (${this.session.processedCourses}/${this.session.totalCourses})`,
+        );
 
         // Small delay between batches
         await this.delay(2000);
@@ -79,7 +85,6 @@ class CourseScrapingOrchestrator {
       });
 
       return this.session;
-
     } catch (error) {
       scrapingLogger.error('Critical error in scraping session', error);
       this.session.errors.push(error.message);
@@ -105,14 +110,11 @@ class CourseScrapingOrchestrator {
           ],
         },
         take: 100, // Limit to 100 courses per session
-        orderBy: [
-          { lastUpdated: 'asc' },
-          { name: 'asc' },
-        ],
+        orderBy: [{ lastUpdated: 'asc' }, { name: 'asc' }],
       });
 
       // Convert to scraping targets
-      const targets: ScrapingTarget[] = courses.map(course => ({
+      const targets: ScrapingTarget[] = courses.map((course) => ({
         id: course.id,
         name: course.name,
         url: course.website || this.generateSearchUrl(course.name, course.location),
@@ -127,7 +129,6 @@ class CourseScrapingOrchestrator {
       }));
 
       return targets;
-
     } catch (error) {
       scrapingLogger.error('Error getting scraping targets from database', error);
 
@@ -220,7 +221,7 @@ class CourseScrapingOrchestrator {
    * Process a batch of courses concurrently
    */
   private async processBatch(targets: ScrapingTarget[]): Promise<void> {
-    const promises = targets.map(target => this.processSingleCourse(target));
+    const promises = targets.map((target) => this.processSingleCourse(target));
 
     // Process with limited concurrency
     const results = await Promise.allSettled(promises);
@@ -269,9 +270,8 @@ class CourseScrapingOrchestrator {
           processingTime: result.processingTime,
         });
       } else {
-        throw new Error(`Scraping failed: ${result.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`Scraping failed: ${result.errors.map((e) => e.message).join(', ')}`);
       }
-
     } catch (error) {
       scrapingLogger.error(`Failed to process course: ${target.name}`, error);
 
@@ -360,7 +360,6 @@ class CourseScrapingOrchestrator {
         courseId,
         confidence: data.confidence,
       });
-
     } catch (error) {
       scrapingLogger.error(`Error saving course data: ${courseId}`, error);
       throw error;
@@ -374,7 +373,7 @@ class CourseScrapingOrchestrator {
     target: ScrapingTarget,
     result: ProcessingResult | null,
     success: boolean,
-    errorMessage?: string
+    errorMessage?: string,
   ): Promise<void> {
     try {
       await db.getClient().scrapingLog.create({
@@ -392,15 +391,16 @@ class CourseScrapingOrchestrator {
           error: errorMessage,
           metadata: {
             target,
-            result: result ? {
-              confidence: result.confidence,
-              method: result.metadata.method,
-              finalUrl: result.metadata.finalUrl,
-            } : undefined,
+            result: result
+              ? {
+                  confidence: result.confidence,
+                  method: result.metadata.method,
+                  finalUrl: result.metadata.finalUrl,
+                }
+              : undefined,
           },
         },
       });
-
     } catch (error) {
       scrapingLogger.error('Error logging scraping activity', error);
     }
@@ -424,9 +424,10 @@ class CourseScrapingOrchestrator {
    */
   private async generateFinalReport(): Promise<void> {
     const duration = Date.now() - this.session.startTime.getTime();
-    const successRate = this.session.totalCourses > 0
-      ? (this.session.successfulCourses / this.session.totalCourses) * 100
-      : 0;
+    const successRate =
+      this.session.totalCourses > 0
+        ? (this.session.successfulCourses / this.session.totalCourses) * 100
+        : 0;
 
     const report = {
       sessionId: this.session.id,
@@ -473,7 +474,7 @@ class CourseScrapingOrchestrator {
    * Utility delay function
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -506,7 +507,6 @@ async function main(): Promise<void> {
     });
 
     process.exit(0);
-
   } catch (error) {
     scrapingLogger.error('Scraping failed with critical error', error);
     errorHandler.handle(error);

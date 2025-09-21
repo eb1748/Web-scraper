@@ -112,19 +112,23 @@ export class StorageManager {
     // Create metadata.json template
     const metadataPath = path.join(courseMediaDir, 'metadata.json');
     if (!(await fs.pathExists(metadataPath))) {
-      await fs.writeJson(metadataPath, {
-        courseId,
-        createdAt: new Date().toISOString(),
-        images: {
-          hero: [],
-          gallery: [],
-          maps: [],
-          amenities: [],
+      await fs.writeJson(
+        metadataPath,
+        {
+          courseId,
+          createdAt: new Date().toISOString(),
+          images: {
+            hero: [],
+            gallery: [],
+            maps: [],
+            amenities: [],
+          },
+          totalImages: 0,
+          totalSizeMB: 0,
+          lastUpdated: new Date().toISOString(),
         },
-        totalImages: 0,
-        totalSizeMB: 0,
-        lastUpdated: new Date().toISOString(),
-      }, { spaces: 2 });
+        { spaces: 2 },
+      );
     }
   }
 
@@ -173,8 +177,8 @@ export class StorageManager {
       totalSize: 0,
     };
 
-    stats.totalSize = stats.dataDir + stats.mediaDir + stats.tempDir +
-                     stats.exportDir + stats.logsDir;
+    stats.totalSize =
+      stats.dataDir + stats.mediaDir + stats.tempDir + stats.exportDir + stats.logsDir;
 
     return stats;
   }

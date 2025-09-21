@@ -10,7 +10,7 @@ import type {
   CourseHistoricalData,
   OSMCourseData,
   CourseEnrichmentData,
-  APIResponse
+  APIResponse,
 } from '../types/api.types';
 
 const prisma = new PrismaClient();
@@ -124,7 +124,6 @@ export class CourseEnrichmentOrchestrator {
       await this.logFinalStats();
 
       return this.stats;
-
     } catch (error) {
       systemLogger.error('Error during course enrichment', error);
       this.stats.errors++;
@@ -137,15 +136,21 @@ export class CourseEnrichmentOrchestrator {
   /**
    * Process a batch of courses
    */
-  private async processBatch(courses: CourseForEnrichment[], options: EnrichmentOptions): Promise<void> {
-    const promises = courses.map(course => this.enrichSingleCourse(course, options));
+  private async processBatch(
+    courses: CourseForEnrichment[],
+    options: EnrichmentOptions,
+  ): Promise<void> {
+    const promises = courses.map((course) => this.enrichSingleCourse(course, options));
     await Promise.allSettled(promises);
   }
 
   /**
    * Enrich a single golf course with all available APIs
    */
-  private async enrichSingleCourse(course: CourseForEnrichment, options: EnrichmentOptions): Promise<void> {
+  private async enrichSingleCourse(
+    course: CourseForEnrichment,
+    options: EnrichmentOptions,
+  ): Promise<void> {
     try {
       systemLogger.debug(`Enriching course: ${course.name} (${course.city}, ${course.state})`);
 
@@ -198,7 +203,6 @@ export class CourseEnrichmentOrchestrator {
       }
 
       this.stats.processed++;
-
     } catch (error) {
       systemLogger.error(`Error enriching course ${course.name}`, error);
       this.stats.errors++;
@@ -208,9 +212,16 @@ export class CourseEnrichmentOrchestrator {
   /**
    * Enrich course with weather data
    */
-  private async enrichWeatherData(course: CourseForEnrichment, enrichmentData: Partial<CourseEnrichmentData>): Promise<void> {
+  private async enrichWeatherData(
+    course: CourseForEnrichment,
+    enrichmentData: Partial<CourseEnrichmentData>,
+  ): Promise<void> {
     try {
-      const weatherResult = await this.apiManager.getGolfWeather(course.id, course.latitude, course.longitude);
+      const weatherResult = await this.apiManager.getGolfWeather(
+        course.id,
+        course.latitude,
+        course.longitude,
+      );
 
       if (weatherResult.success && weatherResult.data) {
         enrichmentData.weather = weatherResult.data;
@@ -230,7 +241,10 @@ export class CourseEnrichmentOrchestrator {
   /**
    * Enrich course with historical data
    */
-  private async enrichHistoricalData(course: CourseForEnrichment, enrichmentData: Partial<CourseEnrichmentData>): Promise<void> {
+  private async enrichHistoricalData(
+    course: CourseForEnrichment,
+    enrichmentData: Partial<CourseEnrichmentData>,
+  ): Promise<void> {
     try {
       const historyResult = await this.apiManager.getCourseHistory(course.name, course.location);
 
@@ -252,9 +266,16 @@ export class CourseEnrichmentOrchestrator {
   /**
    * Enrich course with location data
    */
-  private async enrichLocationData(course: CourseForEnrichment, enrichmentData: Partial<CourseEnrichmentData>): Promise<void> {
+  private async enrichLocationData(
+    course: CourseForEnrichment,
+    enrichmentData: Partial<CourseEnrichmentData>,
+  ): Promise<void> {
     try {
-      const locationResult = await this.apiManager.getCourseLocation(course.name, course.city, course.state);
+      const locationResult = await this.apiManager.getCourseLocation(
+        course.name,
+        course.city,
+        course.state,
+      );
 
       if (locationResult.success && locationResult.data) {
         enrichmentData.location = {
@@ -276,7 +297,10 @@ export class CourseEnrichmentOrchestrator {
   /**
    * Validate enrichment data quality
    */
-  private async validateEnrichmentData(data: CourseEnrichmentData, options: EnrichmentOptions): Promise<void> {
+  private async validateEnrichmentData(
+    data: CourseEnrichmentData,
+    options: EnrichmentOptions,
+  ): Promise<void> {
     try {
       const validation = await this.validationManager.validateData('course_enrichment', data);
 
@@ -288,9 +312,9 @@ export class CourseEnrichmentOrchestrator {
         };
       } else {
         data.dataQuality = {
-          overallScore: Math.max(0, 100 - (validation.errors.length * 20)),
+          overallScore: Math.max(0, 100 - validation.errors.length * 20),
           issues: validation.errors,
-          confidence: Math.max(0, 90 - (validation.errors.length * 15)),
+          confidence: Math.max(0, 90 - validation.errors.length * 15),
         };
 
         if (data.dataQuality.overallScore < options.minQualityScore!) {
@@ -309,7 +333,10 @@ export class CourseEnrichmentOrchestrator {
   /**
    * Save enrichment data to database
    */
-  private async saveEnrichmentData(courseId: string, data: Partial<CourseEnrichmentData>): Promise<void> {
+  private async saveEnrichmentData(
+    courseId: string,
+    data: Partial<CourseEnrichmentData>,
+  ): Promise<void> {
     try {
       // In a real implementation, this would save to your database
       // For now, we'll log the enrichment
@@ -332,7 +359,6 @@ export class CourseEnrichmentOrchestrator {
       //     enrichmentDate: new Date(),
       //   }
       // });
-
     } catch (error) {
       systemLogger.error(`Failed to save enrichment data for course ${courseId}`, error);
     }
@@ -341,7 +367,9 @@ export class CourseEnrichmentOrchestrator {
   /**
    * Get courses that need enrichment
    */
-  private async getCoursesForEnrichment(options: EnrichmentOptions): Promise<CourseForEnrichment[]> {
+  private async getCoursesForEnrichment(
+    options: EnrichmentOptions,
+  ): Promise<CourseForEnrichment[]> {
     try {
       // TODO: Implement actual database query based on your schema
       // This is a placeholder that shows the expected structure
@@ -408,14 +436,13 @@ export class CourseEnrichmentOrchestrator {
           location: 'Augusta, GA',
           city: 'Augusta',
           state: 'GA',
-          latitude: 33.5030,
+          latitude: 33.503,
           longitude: -82.0197,
           hasWeatherData: false,
           hasHistoricalData: false,
           hasLocationData: false,
         },
       ];
-
     } catch (error) {
       systemLogger.error('Error fetching courses for enrichment', error);
       return [];
@@ -461,7 +488,7 @@ export class CourseEnrichmentOrchestrator {
    * Simple delay utility
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -472,7 +499,7 @@ export class CourseEnrichmentOrchestrator {
       ? this.stats.endTime.getTime() - this.stats.startTime.getTime()
       : Date.now() - this.stats.startTime.getTime();
 
-    const durationMinutes = Math.round(duration / 60000 * 100) / 100;
+    const durationMinutes = Math.round((duration / 60000) * 100) / 100;
 
     systemLogger.info('Course enrichment completed', {
       stats: {
@@ -572,7 +599,6 @@ async function main(): Promise<void> {
     if (stats.errors > 0) {
       console.log(`⚠️  Errors: ${stats.errors}`);
     }
-
   } catch (error) {
     systemLogger.error('Course enrichment failed', error);
     console.error('❌ Enrichment failed:', error);
@@ -613,7 +639,7 @@ Examples:
 
 // Run the script if this file is executed directly
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
   });

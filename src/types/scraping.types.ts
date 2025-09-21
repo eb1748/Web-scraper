@@ -246,13 +246,16 @@ export interface ScrapingStats {
   averageResponseTime: number;
   requestsPerMinute: number;
   errorsByType: Record<string, number>;
-  domainStats: Record<string, {
-    requests: number;
-    success: number;
-    failures: number;
-    avgResponseTime: number;
-    lastRequest: Date;
-  }>;
+  domainStats: Record<
+    string,
+    {
+      requests: number;
+      success: number;
+      failures: number;
+      avgResponseTime: number;
+      lastRequest: Date;
+    }
+  >;
   queueStats: QueueStats;
   browserStats: {
     activeSessions: number;
@@ -288,11 +291,23 @@ export interface ScrapingConfig {
 export type ScrapingMethod = 'static' | 'dynamic' | 'hybrid';
 export type DataSource = 'official' | 'directory' | 'community' | 'api';
 export type Priority = 'critical' | 'high' | 'medium' | 'low';
-export type ProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'retrying' | 'cancelled';
+export type ProcessingStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'retrying'
+  | 'cancelled';
 
 // Event types for scraping workflow
 export interface ScrapingEvent {
-  type: 'request_started' | 'request_completed' | 'request_failed' | 'queue_updated' | 'rate_limit_hit' | 'robots_blocked';
+  type:
+    | 'request_started'
+    | 'request_completed'
+    | 'request_failed'
+    | 'queue_updated'
+    | 'rate_limit_hit'
+    | 'robots_blocked';
   data: any;
   timestamp: Date;
   requestId?: string;

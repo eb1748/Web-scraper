@@ -28,15 +28,21 @@ export class DynamicContentScraper {
 
   constructor() {
     // Start cleanup interval
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupSessions();
-    }, 5 * 60 * 1000); // Every 5 minutes
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupSessions();
+      },
+      5 * 60 * 1000,
+    ); // Every 5 minutes
   }
 
   /**
    * Main scraping method for dynamic content
    */
-  async scrapeDynamicSite(target: ScrapingTarget, options?: Partial<ScrapingOptions>): Promise<ProcessingResult> {
+  async scrapeDynamicSite(
+    target: ScrapingTarget,
+    options?: Partial<ScrapingOptions>,
+  ): Promise<ProcessingResult> {
     const startTime = Date.now();
     const requestId = `dynamic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     let page: Page | null = null;
@@ -104,7 +110,6 @@ export class DynamicContentScraper {
           resourcesLoaded: await this.getResourceCount(page),
         },
       };
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const scrapingError = this.handleError(error, target.url);
@@ -146,7 +151,10 @@ export class DynamicContentScraper {
   private async getBrowserSession(): Promise<BrowserSession> {
     // Find available browser or create new one
     for (const [id, session] of this.browsers) {
-      if (session.requestCount < session.maxRequests && Date.now() - session.lastUsed.getTime() < this.sessionTimeout) {
+      if (
+        session.requestCount < session.maxRequests &&
+        Date.now() - session.lastUsed.getTime() < this.sessionTimeout
+      ) {
         session.lastUsed = new Date();
         session.requestCount++;
         return session;
@@ -159,8 +167,9 @@ export class DynamicContentScraper {
     }
 
     // Close oldest browser and create new one
-    const oldestSession = Array.from(this.browsers.values())
-      .sort((a, b) => a.lastUsed.getTime() - b.lastUsed.getTime())[0];
+    const oldestSession = Array.from(this.browsers.values()).sort(
+      (a, b) => a.lastUsed.getTime() - b.lastUsed.getTime(),
+    )[0];
 
     await this.closeBrowserSession(oldestSession.id);
     return await this.createBrowserSession();
@@ -222,16 +231,16 @@ export class DynamicContentScraper {
     }
 
     // Create new page if under limit
-    const sessionPages = Array.from(this.pages.values())
-      .filter(p => p.sessionId === browserSession.id);
+    const sessionPages = Array.from(this.pages.values()).filter(
+      (p) => p.sessionId === browserSession.id,
+    );
 
     if (sessionPages.length < this.maxPagesPerBrowser) {
       return await this.createPage(browserSession);
     }
 
     // Close oldest page and create new one
-    const oldestPage = sessionPages
-      .sort((a, b) => a.lastUsed.getTime() - b.lastUsed.getTime())[0];
+    const oldestPage = sessionPages.sort((a, b) => a.lastUsed.getTime() - b.lastUsed.getTime())[0];
 
     await this.closePage(oldestPage.id);
     return await this.createPage(browserSession);
@@ -308,7 +317,7 @@ export class DynamicContentScraper {
   private async navigateToPage(
     page: Page,
     url: string,
-    options?: Partial<ScrapingOptions>
+    options?: Partial<ScrapingOptions>,
   ): Promise<any> {
     try {
       const response = await page.goto(url, {
@@ -325,7 +334,7 @@ export class DynamicContentScraper {
           `HTTP ${response.status()}: ${response.statusText()}`,
           url,
           'GET',
-          response.status()
+          response.status(),
         );
       }
 
@@ -368,7 +377,10 @@ export class DynamicContentScraper {
   /**
    * Extract all data from the page
    */
-  private async extractPageData(page: Page, target: ScrapingTarget): Promise<{
+  private async extractPageData(
+    page: Page,
+    target: ScrapingTarget,
+  ): Promise<{
     course: CourseBasicInfo;
     contact: ContactInfo;
     images: CourseImages;
@@ -397,7 +409,12 @@ export class DynamicContentScraper {
         }
 
         // Extract description
-        const descSelectors = ['.course-description', '.about-course', '.description', 'meta[name="description"]'];
+        const descSelectors = [
+          '.course-description',
+          '.about-course',
+          '.description',
+          'meta[name="description"]',
+        ];
         for (const selector of descSelectors) {
           const element = document.querySelector(selector);
           if (element) {
@@ -437,7 +454,9 @@ export class DynamicContentScraper {
           if (href && href.startsWith('mailto:')) {
             extractedData.contact.email = href.replace('mailto:', '');
           } else if (emailElement.textContent) {
-            const emailMatch = emailElement.textContent.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+            const emailMatch = emailElement.textContent.match(
+              /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+            );
             if (emailMatch) {
               extractedData.contact.email = emailMatch[0];
             }
@@ -453,7 +472,9 @@ export class DynamicContentScraper {
           }
         });
 
-        const galleryImages = document.querySelectorAll('.gallery img, .photo-gallery img, .course-photos img');
+        const galleryImages = document.querySelectorAll(
+          '.gallery img, .photo-gallery img, .course-photos img',
+        );
         galleryImages.forEach((img: Element) => {
           const src = img.getAttribute('src') || img.getAttribute('data-src');
           if (src && !extractedData.images.gallery.includes(src)) {
@@ -493,7 +514,6 @@ export class DynamicContentScraper {
         images: imageData,
         warnings,
       };
-
     } catch (error) {
       scrapingLogger.error('Error extracting page data', error);
       warnings.push(`Data extraction error: ${error.message}`);
@@ -566,16 +586,18 @@ export class DynamicContentScraper {
    * Resolve relative image URLs to absolute URLs
    */
   private resolveImageUrls(urls: string[], baseUrl: string): string[] {
-    return urls.map(url => {
-      try {
-        if (url.startsWith('http')) {
+    return urls
+      .map((url) => {
+        try {
+          if (url.startsWith('http')) {
+            return url;
+          }
+          return new URL(url, baseUrl).toString();
+        } catch {
           return url;
         }
-        return new URL(url, baseUrl).toString();
-      } catch {
-        return url;
-      }
-    }).filter(Boolean);
+      })
+      .filter(Boolean);
   }
 
   /**
@@ -591,7 +613,7 @@ export class DynamicContentScraper {
 
     // Course data
     const courseFields = ['name', 'description', 'architect'];
-    courseFields.forEach(field => {
+    courseFields.forEach((field) => {
       maxScore += 10;
       if (data.course[field as keyof CourseBasicInfo]) {
         score += 10;
@@ -600,7 +622,7 @@ export class DynamicContentScraper {
 
     // Contact data
     const contactFields = ['phone', 'email'];
-    contactFields.forEach(field => {
+    contactFields.forEach((field) => {
       maxScore += 10;
       if (data.contact[field as keyof ContactInfo]) {
         score += 10;
@@ -740,7 +762,7 @@ export class DynamicContentScraper {
 
     // Close all browser sessions
     const sessionIds = Array.from(this.browsers.keys());
-    await Promise.all(sessionIds.map(id => this.closeBrowserSession(id)));
+    await Promise.all(sessionIds.map((id) => this.closeBrowserSession(id)));
 
     scrapingLogger.info('Dynamic scraper cleanup completed');
   }
