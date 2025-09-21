@@ -1,0 +1,234 @@
+// Prisma Schema for Golf Journey Map Scraper
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CourseType {
+  LINKS
+  PARKLAND
+  DESERT
+  MOUNTAIN
+  RESORT
+}
+
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+  DEBUG
+}
+
+enum LogCategory {
+  SCRAPING
+  VALIDATION
+  PROCESSING
+  API
+}
+
+model Course {
+  id                   String             @id @default(cuid())
+  name                 String
+  location             String
+  latitude             Float
+  longitude            Float
+
+  // Course description and details
+  description          String?            @db.Text
+  history              String?            @db.Text
+  architect            String?
+  openingYear          Int?
+  courseType           CourseType?
+
+  // Golf-specific technical data
+  totalYardage         Int?
+  courseRating         Float?
+  slopeRating          Float?
+  parScore             Int?
+  numberOfHoles        Int?               @default(18)
+
+  // Tournament and historical data
+  majorChampionships   String[]
+  notableEvents        String[]
+  pgatourEvents        String[]
+
+  // Practical information
+  phoneNumber          String?
+  website              String?
+  teeTimeBookingUrl    String?
+  emailContact         String?
+
+  // Pricing and accessibility
+  greensFeePriceRange  String?
+  cartRequired         Boolean            @default(false)
+  dressCode            String?
+  publicAccess         Boolean            @default(true)
+
+  // Media and visual content
+  heroImageUrl         String?
+  galleryImages        String[]
+  courseMapUrl         String?
+  aerialViewUrl        String?
+
+  // SEO and content fields
+  metaDescription      String?
+  keywords             String[]
+  altTextImages        String[]
+
+  // Weather and location data
+  currentWeather       Json?
+  averageTemperature   Json?
+  timezone             String?
+
+  // Data quality and automation metadata
+  lastUpdated          DateTime           @default(now()) @updatedAt
+  dataSourceConfidence Float?
+  automationFlags      String[]
+  dataSources          String[]
+
+  // Relations
+  reviews              Review[]
+  userPhotos           UserPhoto[]
+  qualityReports       QualityReport[]
+  scrapingLogs         ScrapingLog[]
+
+  // Indexes
+  @@index([latitude, longitude], name: "idx_course_location")
+  @@index([name], name: "idx_course_name")
+  @@index([courseType], name: "idx_course_type")
+  @@index([lastUpdated], name: "idx_last_updated")
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  rating      Float
+  comment     String?  @db.Text
+  author      String?
+  source      String   // e.g., "TripAdvisor", "Google", etc.
+  reviewDate  DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([courseId])
+}
+
+model UserPhoto {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  photoUrl    String
+  caption     String?
+  uploadedBy  String?
+  uploadDate  DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([courseId])
+}
+
+model QualityReport {
+  id                   String   @id @default(cuid())
+  courseId             String
+  course               Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // Quality metrics
+  completenessScore    Float
+  accuracyScore        Float
+  consistencyScore     Float
+  freshnessScore       Float
+  reliabilityScore     Float
+  overallScore         Float
+
+  // Issues and recommendations
+  issues               Json
+  recommendations      String[]
+  manualReviewRequired Boolean  @default(false)
+  confidenceLevel      String   // 'high', 'medium', 'low'
+
+  createdAt            DateTime @default(now())
+
+  @@index([courseId])
+  @@index([createdAt])
+}
+
+model ScrapingLog {
+  id          String      @id @default(cuid())
+  courseId    String?
+  course      Course?     @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  timestamp   DateTime    @default(now())
+  level       LogLevel
+  category    LogCategory
+  message     String      @db.Text
+  metadata    Json?
+
+  // Scraping specific data
+  url         String?
+  statusCode  Int?
+  duration    Int?        // milliseconds
+  success     Boolean
+  error       String?
+
+  @@index([courseId])
+  @@index([timestamp])
+  @@index([level])
+  @@index([category])
+}
+
+model Configuration {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+}
+
+model DataSource {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  type         String   // 'API', 'WEBSITE', 'DATABASE'
+  baseUrl      String?
+  apiKey       String?
+  headers      Json?
+  rateLimit    Int?     // requests per minute
+  isActive     Boolean  @default(true)
+  lastChecked  DateTime?
+  reliability  Float?   // 0.0 to 1.0
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ProcessingJob {
+  id           String   @id @default(cuid())
+  type         String   // 'SCRAPING', 'VALIDATION', 'IMAGE_PROCESSING'
+  status       String   // 'PENDING', 'RUNNING', 'COMPLETED', 'FAILED'
+  priority     Int      @default(5) // 1-10, higher is more important
+  courseId     String?
+
+  // Job details
+  config       Json?
+  result       Json?
+  error        String?
+
+  // Timing
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  // Progress tracking
+  totalItems   Int?
+  processedItems Int?
+
+  @@index([status])
+  @@index([type])
+  @@index([priority])
+  @@index([scheduledAt])
+}
