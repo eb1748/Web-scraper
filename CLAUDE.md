@@ -10,7 +10,9 @@
 - **SEO**: next-seo, react-helmet-async, web-vitals monitoring
 - **Testing**: Jest 29+, Playwright Test (42 SEO tests passing)
 - **Linting**: ESLint 8+, Prettier 3+
-- **Monitoring**: Winston logger, Prometheus metrics
+- **Automation**: node-cron, node-schedule, Bull queues, Prometheus metrics
+- **Monitoring**: Winston logger, Health monitoring, Alert management (Email/Slack)
+- **Maintenance**: Automated database optimization, file system cleanup
 
 ## Project Structure
 ```
@@ -48,12 +50,18 @@
       image-validator.ts      # Quality assessment and scoring
       media-manager.ts        # File organization and metadata
       media-database.ts       # Database integration for media
+    automated-data-collector.ts # Multi-source data collection orchestration (✅ NEW)
+    schedule-manager.ts         # Cron job automation and task scheduling (✅ NEW)
+    health-monitor.ts           # System health monitoring with Prometheus (✅ NEW)
+    alert-manager.ts            # Email/Slack alerting system (✅ NEW)
+    progress-tracker.ts         # Real-time progress tracking and reporting (✅ NEW)
   /types/           # TypeScript type definitions
     api.types.ts    # API service type definitions (456 lines)
     config.types.ts # Type-safe configuration interfaces
     media.types.ts  # Image processing and media types (117 lines)
     quality.types.ts # Quality assessment & course data types
     seo.types.ts    # SEO metadata and structured data types
+    automation.types.ts # Automation workflow and monitoring types (✅ NEW)
   /utils/           # Core utilities and helpers
     database.ts     # Database connection management
     data-validation.ts  # Data validation and cleaning utilities (574 lines)
@@ -76,7 +84,17 @@
   /__tests__/       # Comprehensive test suites
     /media/         # Image processing pipeline tests
     /seo/           # SEO metadata & structured data tests (42 tests)
+    /automation/    # Automation system tests (✅ NEW)
+  /scripts/         # Automation and maintenance scripts (✅ NEW)
+    master-automation.ts      # Complete automation orchestrator (650+ lines)
+    database-maintenance.ts   # Database optimization and cleanup
+    filesystem-cleanup.ts     # File system maintenance and cleanup
   index.ts          # Application entry point
+/scripts/           # Shell scripts for cron jobs (✅ NEW)
+  update-weather-data.sh     # Daily weather update automation
+  validate-all-data.sh       # Weekly comprehensive validation
+  monthly-automation.sh      # Monthly full refresh and maintenance
+  system-maintenance.sh      # System-wide maintenance tasks
 /data/              # Temporary data storage and processing
 /media/             # Course images and media files (auto-organized)
   /courses/         # Course-specific media organization
@@ -137,6 +155,24 @@
 - `npm run quality:report` - Generate quality assessment reports
 - `npm run quality:demo` - Run quality system demonstration
 
+### Automation & Scheduling (✅ NEW)
+- `npm run automation:run` - Execute master automation workflow
+- `npm run automation:collect` - Run automated data collection
+- `npm run automation:schedule` - Start cron job scheduler
+- `npm run automation:health` - Monitor system health
+- `npm run automation:progress` - Track automation progress
+
+### Maintenance & Cleanup (✅ NEW)
+- `npm run maintenance:database` - Database optimization and cleanup
+- `npm run maintenance:filesystem` - File system cleanup and organization
+- `npm run maintenance:full` - Complete system maintenance
+- `npm run maintenance:quick` - Quick maintenance tasks
+
+### Scheduled Tasks (✅ NEW)
+- `npm run scheduled:weather` - Daily weather data updates
+- `npm run scheduled:validate` - Weekly comprehensive validation
+- `npm run scheduled:monthly` - Monthly full refresh and maintenance
+
 ## Web Scraping Configuration
 
 ### Rate Limiting & Ethics
@@ -189,10 +225,11 @@ retryWithBackoff() // Exponential backoff retries
 - **Cross-validation**: Minimum 2 sources for critical data
 - **Image Requirements**: 1200px+ width for hero images
 
-## Automation Schedules
-- **Daily (2 AM)**: Weather updates via OpenWeather API, broken link checks
-- **Weekly (Sunday 3 AM)**: Full data validation, Wikipedia content enhancement
-- **Monthly (1st, 4 AM)**: Complete data refresh, OSM location updates, photo gallery updates
+## Automation Schedules (✅ ENHANCED)
+- **Daily (2 AM)**: Weather updates via OpenWeather API, broken link checks, image optimization
+- **Weekly (Sunday 3 AM)**: Full data validation, Wikipedia content enhancement, SEO analysis
+- **Monthly (1st, 4 AM)**: Complete data refresh, database maintenance, OSM location updates, photo gallery updates
+- **Maintenance (Various)**: Database optimization, file system cleanup, log rotation, backup verification
 
 ## Security & Compliance
 - **No PII Storage**: Personal information handling prohibited
@@ -220,11 +257,14 @@ retryWithBackoff() // Exponential backoff retries
 - **E2E Tests**: Complete automation workflows
 - **Performance Tests**: Scraping rate limits and memory usage
 
-## Monitoring & Alerting
-- **System Health**: CPU > 90%, Memory > 85% alerts
-- **Database Performance**: Query time > 1000ms warnings
-- **Automation Failures**: >20% failure rate alerts
-- **API Status**: External service downtime notifications
+## Monitoring & Alerting (✅ ENHANCED)
+- **System Health**: CPU > 90%, Memory > 85% alerts with Prometheus metrics
+- **Database Performance**: Query time > 1000ms warnings, connection monitoring
+- **Automation Failures**: >20% failure rate alerts with detailed error tracking
+- **API Status**: External service downtime notifications with circuit breakers
+- **Progress Tracking**: Real-time automation progress with ETA calculations
+- **Alert Channels**: Email and Slack notifications with priority-based routing
+- **Health Dashboards**: Comprehensive monitoring with historical trend analysis
 
 ## Data Quality & Validation System (✅ Implemented)
 - **Multi-Dimensional Scoring**: Completeness (30%), Accuracy (25%), Consistency (20%), Reliability (15%), Freshness (10%)
@@ -259,12 +299,15 @@ retryWithBackoff() // Exponential backoff retries
 - **Error Handling**: React error boundaries with graceful degradation
 - **Testing**: 42 passing SEO tests validating all functionality
 
-## Performance Targets
+## Performance Targets (✅ ENHANCED)
 - **Page Load**: <3 seconds for course detail pages
 - **Core Web Vitals**: LCP <2.5s, FID <100ms, CLS <0.1 (✅ Monitored)
 - **SEO Score**: 95+ Google PageSpeed Insights
 - **API Response**: <500ms for data queries
-- **Batch Processing**: 100 courses in <2 hours
+- **Batch Processing**: 100 courses in <2 hours with progress tracking
+- **Automation Efficiency**: 95%+ success rate for scheduled tasks
+- **System Uptime**: 99.9% availability with health monitoring
+- **Data Freshness**: Weather updated daily, comprehensive validation weekly
 
 ## File Organization
 - Original images: `/media/courses/{courseId}/original/`
@@ -285,29 +328,85 @@ retryWithBackoff() // Exponential backoff retries
 - `npm run logs:recent` - Show last 100 log entries
 - `npm run health:check` - Quick system health verification
 
-## Architecture Notes
+## Architecture Notes (✅ ENHANCED)
 - **Microservices Pattern**: Separate services for scraping, validation, image processing, API integration, data quality
 - **Frontend Architecture**: Next.js 14+ with TypeScript, SSG/SSR, and React 18
 - **SEO Infrastructure**: 5 specialized SEO services with automated optimization
 - **API Integration**: 3 external APIs with centralized management, rate limiting, and circuit breakers
 - **Data Quality System**: 9 specialized services for comprehensive quality assessment and enhancement
+- **Automation System**: Complete workflow orchestration with scheduling, monitoring, and maintenance (✅ NEW)
+- **Health Monitoring**: Real-time system monitoring with Prometheus metrics and alerting (✅ NEW)
+- **Task Scheduling**: Cron-based automation with retry logic and progress tracking (✅ NEW)
+- **Alert Management**: Multi-channel notifications (Email/Slack) with priority routing (✅ NEW)
+- **Maintenance Automation**: Database optimization, file cleanup, and system health checks (✅ NEW)
 - **Smart Caching**: Node-cache with service-specific TTL (30min weather, 24hr Wikipedia/OSM)
-- **Queue System**: Bull/Redis for batch job management (planned)
-- **Database**: PostgreSQL with Prisma ORM, 13+ models, optimized indexes
+- **Queue System**: Bull/Redis for batch job management with task queues (✅ ENHANCED)
+- **Database**: PostgreSQL with Prisma ORM, 13+ models, optimized indexes, automated maintenance
 - **Media Pipeline**: Complete image processing with Sharp, multi-format optimization
 - **Quality Pipeline**: Multi-dimensional scoring, cross-validation, automated enhancement
 - **SEO Pipeline**: Automated metadata generation, structured data, social media optimization
-- **Logging**: Winston with daily rotation, category-specific loggers
-- **Storage**: Automated directory management, course-specific organization
+- **Logging**: Winston with daily rotation, category-specific loggers, automated cleanup
+- **Storage**: Automated directory management, course-specific organization, cleanup automation
 - **Error Handling**: 10+ custom error types, circuit breaker, exponential backoff, React error boundaries
 - **Configuration**: Type-safe with Joi validation, comprehensive API and quality settings
 - **Data Quality**: 9 quality services with 25+ validation rules and enhancement algorithms
 - **Testing**: Comprehensive unit, integration, and E2E test coverage (42 SEO tests, 100% quality system)
 - **Accessibility**: Auto-generated alt text for WCAG compliance
-- **Horizontal Scaling**: Stateless services for easy scaling
+- **Horizontal Scaling**: Stateless services for easy scaling with load balancing support
 
-## Emergency Procedures
-- **Rate Limit Violations**: Automatically pause scraping for 1 hour
-- **Database Connection Loss**: Retry with exponential backoff
+## Automation System Overview (✅ NEW - PR7)
+
+### Master Automation Workflow
+The Golf Journey Map now features a comprehensive automation system that handles end-to-end data collection, processing, and maintenance with minimal manual intervention.
+
+#### Core Components:
+1. **Master Orchestrator** (`master-automation.ts`) - Coordinates complete automation workflows
+2. **Data Collector** (`automated-data-collector.ts`) - Multi-source data collection with parallel processing
+3. **Schedule Manager** (`schedule-manager.ts`) - Cron-based task scheduling with retry logic
+4. **Health Monitor** (`health-monitor.ts`) - Real-time system monitoring with Prometheus metrics
+5. **Alert Manager** (`alert-manager.ts`) - Multi-channel notification system (Email/Slack)
+6. **Progress Tracker** (`progress-tracker.ts`) - Real-time progress monitoring and reporting
+
+#### Automation Schedules:
+- **Daily**: Weather updates, broken link checks, image optimization
+- **Weekly**: Full data validation, content enhancement, SEO analysis
+- **Monthly**: Complete data refresh, database maintenance, system optimization
+
+#### Monitoring & Alerting:
+- CPU, memory, and disk usage monitoring with configurable thresholds
+- Database performance tracking with query time analysis
+- Automation failure detection with detailed error reporting
+- Multi-channel notifications with priority-based routing
+- Progress tracking with ETA calculations and success metrics
+
+#### Maintenance Automation:
+- Database optimization with index rebuilding and statistics updates
+- File system cleanup with log rotation and orphaned file removal
+- System health checks with automated issue detection
+- Backup verification and old data archival
+
+### Getting Started with Automation:
+```bash
+# Start the automation system
+npm run automation:run
+
+# Monitor system health
+npm run automation:health
+
+# Run maintenance tasks
+npm run maintenance:full
+
+# Execute scheduled tasks manually
+npm run scheduled:weather
+npm run scheduled:validate
+npm run scheduled:monthly
+```
+
+## Emergency Procedures (✅ ENHANCED)
+- **Rate Limit Violations**: Automatically pause scraping for 1 hour with circuit breaker
+- **Database Connection Loss**: Retry with exponential backoff and health monitoring
+- **Automation Failures**: Alert system with detailed error tracking and recovery procedures
+- **High Resource Usage**: Automated alerting and optional task throttling
+- **Data Quality Issues**: Automatic flagging for manual review with detailed reports
 - **Disk Space Critical**: Auto-cleanup temp files, alert administrators
 - **API Quota Exceeded**: Switch to backup services, reduce frequency
